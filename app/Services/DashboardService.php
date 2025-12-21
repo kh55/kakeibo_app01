@@ -2,9 +2,9 @@
 
 namespace App\Services;
 
-use App\Models\User;
-use App\Models\Transaction;
 use App\Models\Budget;
+use App\Models\Transaction;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -112,6 +112,7 @@ class DashboardService
 
         return $budgets->map(function ($budget) use ($actuals) {
             $actual = $actuals->get($budget->category_id, 0);
+
             return [
                 'category_name' => $budget->category->name,
                 'budget' => $budget->amount,

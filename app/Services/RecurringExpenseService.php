@@ -46,7 +46,7 @@ class RecurringExpenseService
                     'amount' => $rule->amount,
                     'is_recurring' => true,
                 ]);
-                $generated++;
+                $generated = $generated + 1;
             }
         }
 
