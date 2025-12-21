@@ -602,7 +602,8 @@ jobs:
           tar -xzf ~/deploy.tar.gz -C "\$RELEASE_PATH"
           rm ~/deploy.tar.gz
           
-          echo "RELEASE_PATH=\$RELEASE_PATH" >> ~/.deploy_env
+          # Write RELEASE_PATH to deploy_env (without escaping)
+          echo "RELEASE_PATH=$RELEASE_PATH" >> ~/.deploy_env
           echo "✅ Package extracted to: \$RELEASE_PATH"
           EOF
 
@@ -640,7 +641,31 @@ jobs:
           echo "⚙️  Running deployment commands..."
           ssh deploy-server bash << 'EOF'
           set -e
-          source ~/.deploy_env
+          
+          # Load deployment environment variables
+          if [ -f ~/.deploy_env ]; then
+            source ~/.deploy_env
+            echo "📋 Loaded RELEASE_PATH: \$RELEASE_PATH"
+          else
+            echo "❌ Error: ~/.deploy_env file not found"
+            exit 1
+          fi
+          
+          # Verify RELEASE_PATH is set
+          if [ -z "\$RELEASE_PATH" ]; then
+            echo "❌ Error: RELEASE_PATH is not set"
+            echo "📝 Contents of ~/.deploy_env:"
+            cat ~/.deploy_env || echo "File is empty or cannot be read"
+            exit 1
+          fi
+          
+          # Verify RELEASE_PATH directory exists
+          if [ ! -d "\$RELEASE_PATH" ]; then
+            echo "❌ Error: RELEASE_PATH directory does not exist: \$RELEASE_PATH"
+            echo "📝 Checking releases directory:"
+            ls -la "\$(dirname \$RELEASE_PATH)" || true
+            exit 1
+          fi
           
           cd "\$RELEASE_PATH"
           
