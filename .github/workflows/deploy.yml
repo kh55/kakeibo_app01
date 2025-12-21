@@ -74,18 +74,18 @@ jobs:
 
       - name: Setup SSH
         run: |
-          set -e  # Exit on any error
-          
+          # Create .ssh directory
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           
-          # Write SSH private key
+          # Check if SSH_PRIVATE_KEY is set
           if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
             echo "Error: SSH_PRIVATE_KEY secret is not set or is empty"
             exit 1
           fi
           
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          # Write SSH private key using printf to handle special characters
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           
           # Verify the key file was created and has content
@@ -101,6 +101,7 @@ jobs:
           
           KEY_LINES=$(wc -l < ~/.ssh/id_rsa)
           echo "SSH key file created successfully ($KEY_LINES lines)"
+          ls -la ~/.ssh/id_rsa
           
           # Add host to known_hosts
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
@@ -114,7 +115,7 @@ jobs:
             sudo apt-get update && sudo apt-get install -y expect
             
             echo "Adding SSH key with passphrase..."
-            expect -c "
+            if ! expect -c "
               set timeout 10
               spawn ssh-add ~/.ssh/id_rsa
               expect {
@@ -135,10 +136,10 @@ jobs:
                   exit 1
                 }
               }
-            " || {
+            "; then
               echo "Error: Failed to add SSH key with passphrase"
               exit 1
-            }
+            fi
           else
             echo "Attempting to add SSH key without passphrase..."
             if ! DISPLAY=:0 SSH_ASKPASS=/bin/echo ssh-add ~/.ssh/id_rsa < /dev/null; then
