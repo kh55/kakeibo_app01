@@ -54,6 +54,7 @@ class DashboardController extends Controller
             ->get()
             ->filter(function ($plan) use ($now, $endOfMonth) {
                 $payDate = Carbon::create($now->year, $now->month, min($plan->pay_day, $now->daysInMonth));
+
                 return $payDate->between($now, $endOfMonth) && $payDate->gte($plan->start_date);
             });
 
