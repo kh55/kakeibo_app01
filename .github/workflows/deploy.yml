@@ -89,6 +89,12 @@ jobs:
               exit 1
             }
           fi
+          echo "SSH key added successfully"
+          ssh-add -l
+
+      - name: Test SSH Connection
+        run: |
+          ssh -v -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "echo 'SSH connection successful'"
 
       - name: Deploy via rsync
         run: |
