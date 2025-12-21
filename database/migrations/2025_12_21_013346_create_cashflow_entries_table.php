@@ -20,7 +20,7 @@ return new class extends Migration
             $table->decimal('income_amount', 10, 2)->default(0); // 収入額
             $table->text('memo')->nullable();
             $table->timestamps();
-            
+
             $table->index(['user_id', 'date']);
         });
     }

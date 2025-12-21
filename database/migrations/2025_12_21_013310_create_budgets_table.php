@@ -19,7 +19,7 @@ return new class extends Migration
             $table->foreignId('category_id')->constrained()->onDelete('cascade');
             $table->decimal('amount', 10, 2); // 予定支出額
             $table->timestamps();
-            
+
             $table->unique(['user_id', 'year', 'month', 'category_id']);
             $table->index(['user_id', 'year', 'month']);
         });

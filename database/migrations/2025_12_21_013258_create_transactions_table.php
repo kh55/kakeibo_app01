@@ -25,7 +25,7 @@ return new class extends Migration
             $table->string('tags')->nullable(); // カンマ区切り
             $table->softDeletes();
             $table->timestamps();
-            
+
             $table->index(['user_id', 'date']);
             $table->index(['user_id', 'type', 'date']);
         });

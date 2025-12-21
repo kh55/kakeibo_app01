@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Transaction;
 use App\Models\Account;
 use App\Models\Category;
+use App\Models\Transaction;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Maatwebsite\Excel\Facades\Excel;
-use Carbon\Carbon;
 
 class ImportExportController extends Controller
 {
@@ -37,7 +36,7 @@ class ImportExportController extends Controller
         $month = $request->get('month');
 
         $handle = fopen($file->getRealPath(), 'r');
-        $header = fgetcsv($handle); // Skip header
+        fgetcsv($handle); // Skip header
 
         $imported = 0;
         $errors = [];
@@ -118,7 +117,7 @@ class ImportExportController extends Controller
             ->orderBy('date')
             ->get();
 
-        $filename = "transactions_{$year}{$month:02d}.csv";
+        $filename = "transactions_{$year}".str_pad($month, 2, '0', STR_PAD_LEFT).".csv";
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",

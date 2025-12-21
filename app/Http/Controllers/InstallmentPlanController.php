@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\InstallmentPlan;
 use App\Models\Transaction;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
 
 class InstallmentPlanController extends Controller
 {

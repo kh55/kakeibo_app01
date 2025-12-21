@@ -14,6 +14,7 @@ class CategoryController extends Controller
     public function index()
     {
         $categories = Auth::user()->categories()->orderBy('sort_order')->get();
+
         return view('categories.index', compact('categories'));
     }
 
@@ -49,6 +50,7 @@ class CategoryController extends Controller
     public function edit(Category $category)
     {
         $this->authorize('update', $category);
+
         return view('categories.edit', compact('category'));
     }
 

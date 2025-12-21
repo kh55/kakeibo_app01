@@ -13,7 +13,7 @@ class DashboardService
     /**
      * Get monthly summary for the user.
      */
-    public function getMonthlySummary(User $user, int $year = null, int $month = null): array
+    public function getMonthlySummary(User $user, ?int $year = null, ?int $month = null): array
     {
         $year = $year ?? Carbon::now()->year;
         $month = $month ?? Carbon::now()->month;

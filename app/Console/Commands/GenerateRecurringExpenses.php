@@ -27,7 +27,7 @@ class GenerateRecurringExpenses extends Command
     {
         $service = app(\App\Services\RecurringExpenseService::class);
         $now = \Carbon\Carbon::now();
-        
+
         $users = \App\Models\User::all();
         $totalGenerated = 0;
 
