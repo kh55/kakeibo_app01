@@ -115,12 +115,16 @@ jobs:
             sudo apt-get update && sudo apt-get install -y expect
             
             echo "Adding SSH key with passphrase..."
+            SSH_KEY_PATH="$HOME/.ssh/id_rsa"
+            SSH_PASS="${{ secrets.SSH_PASSPHRASE }}"
+            
             if ! expect -c "
               set timeout 10
-              spawn ssh-add ~/.ssh/id_rsa
+              set ssh_key \"$SSH_KEY_PATH\"
+              spawn ssh-add \$ssh_key
               expect {
                 \"Enter passphrase\" {
-                  send \"${{ secrets.SSH_PASSPHRASE }}\r\"
+                  send \"$SSH_PASS\r\"
                   exp_continue
                 }
                 \"Identity added\" {
