@@ -179,9 +179,29 @@ jobs:
           # Validate key with ssh-keygen
           if ssh-keygen -l -f ~/.ssh/deploy_key 2>/dev/null; then
             echo "✅ SSH key is valid"
+            echo "🔑 Public key fingerprint:"
+            ssh-keygen -l -f ~/.ssh/deploy_key
           else
             echo "⚠️  Warning: Could not validate key with ssh-keygen"
+            echo "📝 Key file content (first 3 lines):"
+            head -3 ~/.ssh/deploy_key
           fi
+          
+          # Check if key is encrypted (requires passphrase)
+          if grep -q "ENCRYPTED" ~/.ssh/deploy_key; then
+            echo "⚠️  Warning: SSH key appears to be encrypted"
+            if [ -z "$SSH_PASSPHRASE" ]; then
+              echo "❌ Error: Encrypted key detected but SSH_PASSPHRASE is not set"
+              echo "💡 Solution: Either set SSH_PASSPHRASE secret or use a passphrase-less key"
+              exit 1
+            fi
+          fi
+          
+          # Extract and display public key for server setup
+          echo ""
+          echo "📋 Public key (to be added to server's ~/.ssh/authorized_keys):"
+          ssh-keygen -y -f ~/.ssh/deploy_key 2>/dev/null || echo "⚠️  Could not extract public key (may require passphrase)"
+          echo ""
           
           # Add host to known_hosts
           echo "🔑 Adding host to known_hosts..."
@@ -204,12 +224,25 @@ jobs:
       - name: Test SSH Connection
         run: |
           echo "🔌 Testing SSH connection..."
-          if ssh deploy-server "echo '✅ SSH connection successful'"; then
-            echo "✅ SSH connection test passed"
-          else
+          echo "📋 SSH Configuration:"
+          cat ~/.ssh/config
+          echo ""
+          echo "🔑 SSH Key Info:"
+          ls -la ~/.ssh/deploy_key
+          ssh-keygen -l -f ~/.ssh/deploy_key || echo "⚠️  Could not read key fingerprint"
+          echo ""
+          echo "🔍 Attempting connection with verbose output..."
+          ssh -vvv deploy-server "echo '✅ SSH connection successful'" || {
+            echo ""
             echo "❌ SSH connection test failed"
+            echo "📝 Troubleshooting steps:"
+            echo "1. Verify SSH_PRIVATE_KEY secret contains the full private key (including BEGIN/END lines)"
+            echo "2. Ensure the corresponding public key is in ~/.ssh/authorized_keys on the server"
+            echo "3. Check SSH_USER and SSH_HOST secrets are correct"
+            echo "4. Verify the private key does not require a passphrase (or set SSH_PASSPHRASE secret)"
             exit 1
-          fi
+          }
+          echo "✅ SSH connection test passed"
 
       - name: Prepare deployment directory
         run: |
