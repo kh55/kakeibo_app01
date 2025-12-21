@@ -215,8 +215,8 @@ jobs:
             exit 1
           fi
           
-          # Write SSH private key
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          # Write SSH private key using printf to preserve newlines
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           
           # Verify key file
@@ -225,22 +225,77 @@ jobs:
             exit 1
           fi
           
-          echo "✅ SSH key file created ($(wc -l < ~/.ssh/deploy_key) lines)"
+          KEY_LINES=$(wc -l < ~/.ssh/deploy_key)
+          KEY_SIZE=$(wc -c < ~/.ssh/deploy_key)
+          echo "✅ SSH key file created ($KEY_LINES lines, $KEY_SIZE bytes)"
           
-          # Show key format (first and last line)
-          echo "📝 Key format check:"
-          head -1 ~/.ssh/deploy_key
-          tail -1 ~/.ssh/deploy_key
+          # Detailed key format validation
+          echo "📝 Key format validation:"
+          echo "First line: $(head -1 ~/.ssh/deploy_key)"
+          echo "Last line: $(tail -1 ~/.ssh/deploy_key)"
+          
+          # Check if key has proper BEGIN/END markers
+          if ! grep -q "BEGIN.*PRIVATE KEY" ~/.ssh/deploy_key; then
+            echo "❌ Error: SSH key does not contain BEGIN PRIVATE KEY marker"
+            echo "📝 First 5 lines of key file:"
+            head -5 ~/.ssh/deploy_key
+            echo ""
+            echo "💡 Make sure SSH_PRIVATE_KEY secret includes the full key with BEGIN/END lines"
+            exit 1
+          fi
+          
+          if ! grep -q "END.*PRIVATE KEY" ~/.ssh/deploy_key; then
+            echo "❌ Error: SSH key does not contain END PRIVATE KEY marker"
+            echo "📝 Last 5 lines of key file:"
+            tail -5 ~/.ssh/deploy_key
+            echo ""
+            echo "💡 Make sure SSH_PRIVATE_KEY secret includes the full key with BEGIN/END lines"
+            exit 1
+          fi
+          
+          # Detect key type
+          if grep -q "BEGIN RSA PRIVATE KEY" ~/.ssh/deploy_key; then
+            KEY_TYPE="RSA"
+          elif grep -q "BEGIN OPENSSH PRIVATE KEY" ~/.ssh/deploy_key; then
+            KEY_TYPE="OpenSSH"
+          elif grep -q "BEGIN EC PRIVATE KEY" ~/.ssh/deploy_key; then
+            KEY_TYPE="ECDSA"
+          elif grep -q "BEGIN ED25519 PRIVATE KEY" ~/.ssh/deploy_key; then
+            KEY_TYPE="ED25519"
+          else
+            KEY_TYPE="Unknown"
+          fi
+          echo "🔑 Detected key type: $KEY_TYPE"
           
           # Validate key with ssh-keygen
-          if ssh-keygen -l -f ~/.ssh/deploy_key 2>/dev/null; then
+          echo ""
+          echo "🔍 Validating key with ssh-keygen..."
+          if ssh-keygen -l -f ~/.ssh/deploy_key 2>&1; then
             echo "✅ SSH key is valid"
             echo "🔑 Public key fingerprint:"
             ssh-keygen -l -f ~/.ssh/deploy_key
           else
-            echo "⚠️  Warning: Could not validate key with ssh-keygen"
-            echo "📝 Key file content (first 3 lines):"
-            head -3 ~/.ssh/deploy_key
+            KEYGEN_ERROR=$(ssh-keygen -l -f ~/.ssh/deploy_key 2>&1)
+            echo "❌ Error: Could not validate key with ssh-keygen"
+            echo "Error message: $KEYGEN_ERROR"
+            echo ""
+            echo "📝 Key file diagnostic:"
+            echo "  Lines: $KEY_LINES"
+            echo "  Size: $KEY_SIZE bytes"
+            echo "  Type: $KEY_TYPE"
+            echo ""
+            echo "📋 First 10 lines:"
+            head -10 ~/.ssh/deploy_key
+            echo ""
+            echo "📋 Last 10 lines:"
+            tail -10 ~/.ssh/deploy_key
+            echo ""
+            echo "💡 Possible issues:"
+            echo "  1. Key format is incorrect (missing BEGIN/END lines)"
+            echo "  2. Key has extra whitespace or characters"
+            echo "  3. Key is corrupted or incomplete"
+            echo "  4. Key requires a passphrase (set SSH_PASSPHRASE secret)"
+            exit 1
           fi
           
           # Check if key is encrypted (requires passphrase)
