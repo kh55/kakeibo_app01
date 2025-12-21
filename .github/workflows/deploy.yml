@@ -94,18 +94,36 @@ jobs:
 
       - name: Create deployment archive
         run: |
-          tar -czf deploy.tar.gz \
-            --exclude='.git' \
-            --exclude='.github' \
-            --exclude='node_modules' \
-            --exclude='tests' \
-            --exclude='.env*' \
-            --exclude='docker*' \
-            --exclude='Dockerfile' \
-            --exclude='.dockerignore' \
-            --exclude='phpunit.xml' \
-            --exclude='*.md' \
-            ./
+          # Wait for file system to sync to ensure all writes are complete
+          sync
+          
+          # Create temporary directory for deployment package
+          DEPLOY_DIR="/tmp/deploy-package"
+          mkdir -p "$DEPLOY_DIR"
+          
+          # Copy files to temporary directory, excluding unnecessary files
+          find . -mindepth 1 -maxdepth 1 \
+            ! -name '.git' \
+            ! -name '.github' \
+            ! -name 'node_modules' \
+            ! -name 'tests' \
+            ! -name '.env*' \
+            ! -name 'docker*' \
+            ! -name 'Dockerfile' \
+            ! -name '.dockerignore' \
+            ! -name 'phpunit.xml' \
+            ! -name '*.md' \
+            ! -name 'deploy.tar.gz' \
+            -exec cp -r {} "$DEPLOY_DIR/" \;
+          
+          # Create archive from stable temporary directory (no file changes possible)
+          cd "$DEPLOY_DIR"
+          tar -czf "${{ github.workspace }}/deploy.tar.gz" .
+          
+          # Cleanup
+          rm -rf "$DEPLOY_DIR"
+          
+          echo "✅ Deployment archive created: $(du -h deploy.tar.gz | cut -f1)"
 
       - name: Upload deployment archive
         uses: actions/upload-artifact@v4
