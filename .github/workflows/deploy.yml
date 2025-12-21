@@ -79,7 +79,17 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
           eval $(ssh-agent -s)
-          ssh-add ~/.ssh/id_rsa
+          if [ -n "${{ secrets.SSH_PASSPHRASE }}" ]; then
+            apt-get update && apt-get install -y expect
+            expect << EOF
+              spawn ssh-add ~/.ssh/id_rsa
+              expect "Enter passphrase"
+              send "${{ secrets.SSH_PASSPHRASE }}\r"
+              expect eof
+            EOF
+          else
+            ssh-add ~/.ssh/id_rsa
+          fi
 
       - name: Deploy via rsync
         run: |
