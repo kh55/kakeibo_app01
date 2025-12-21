@@ -90,6 +90,7 @@ GitHub Actionsによる自動デプロイが設定されています。
 - `SSH_HOST`: サーバーのホスト名
 - `SSH_USER`: SSHユーザー名
 - `DEPLOY_PATH`: デプロイ先のパス（例: /home/user/public_html）
+- `SSH_PASSPHRASE`: SSH秘密鍵のパスフレーズ（パスフレーズがある場合のみ。パスフレーズなしの鍵を使用する場合は設定不要）
 
 ## セキュリティ
 
