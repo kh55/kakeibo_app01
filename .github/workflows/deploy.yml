@@ -138,6 +138,62 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     
     steps:
+      - name: Validate GitHub Secrets
+        run: |
+          echo "🔍 Validating GitHub Secrets..."
+          MISSING_SECRETS=()
+          
+          # Check required secrets
+          if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+            MISSING_SECRETS+=("SSH_PRIVATE_KEY")
+          fi
+          
+          if [ -z "${{ secrets.SSH_HOST }}" ]; then
+            MISSING_SECRETS+=("SSH_HOST")
+          fi
+          
+          if [ -z "${{ secrets.SSH_USER }}" ]; then
+            MISSING_SECRETS+=("SSH_USER")
+          fi
+          
+          if [ -z "${{ secrets.DEPLOY_PATH }}" ]; then
+            MISSING_SECRETS+=("DEPLOY_PATH")
+          fi
+          
+          # Report results
+          if [ ${#MISSING_SECRETS[@]} -eq 0 ]; then
+            echo "✅ All required secrets are set"
+            echo ""
+            echo "📋 Secrets status:"
+            echo "  ✅ SSH_PRIVATE_KEY: Set"
+            echo "  ✅ SSH_HOST: Set (${{ secrets.SSH_HOST }})"
+            echo "  ✅ SSH_USER: Set (${{ secrets.SSH_USER }})"
+            echo "  ✅ DEPLOY_PATH: Set (${{ secrets.DEPLOY_PATH }})"
+            if [ -n "${{ secrets.SSH_PASSPHRASE }}" ]; then
+              echo "  ✅ SSH_PASSPHRASE: Set"
+            else
+              echo "  ⚠️  SSH_PASSPHRASE: Not set (optional, only needed for encrypted keys)"
+            fi
+          else
+            echo "❌ Missing required secrets:"
+            for secret in "${MISSING_SECRETS[@]}"; do
+              echo "  - $secret"
+            done
+            echo ""
+            echo "💡 Please configure the missing secrets in:"
+            echo "   GitHub Repository → Settings → Secrets and variables → Actions"
+            echo ""
+            echo "Required secrets:"
+            echo "  - SSH_PRIVATE_KEY: SSH private key for server access"
+            echo "  - SSH_HOST: Server hostname or IP address"
+            echo "  - SSH_USER: SSH username"
+            echo "  - DEPLOY_PATH: Deployment path on server (e.g., /var/www/app)"
+            echo ""
+            echo "Optional secrets:"
+            echo "  - SSH_PASSPHRASE: Passphrase for encrypted SSH key (if applicable)"
+            exit 1
+          fi
+
       - name: Download deployment archive
         uses: actions/download-artifact@v4
         with:
