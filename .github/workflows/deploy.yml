@@ -552,91 +552,97 @@ jobs:
           fi
 
       - name: Prepare deployment directory
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
           echo "📁 Preparing deployment directory..."
-          ssh deploy-server << 'ENDSSH'
+          ssh deploy-server bash << EOF
           set -e
           
-          DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
-          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-          BACKUP_PATH="${DEPLOY_PATH}_backup_${TIMESTAMP}"
+          DEPLOY_PATH="$DEPLOY_PATH"
+          TIMESTAMP=\$(date +%Y%m%d_%H%M%S)
+          BACKUP_PATH="\${DEPLOY_PATH}_backup_\${TIMESTAMP}"
           
           # Create deployment directory if it doesn't exist
-          mkdir -p "$DEPLOY_PATH"
+          mkdir -p "\$DEPLOY_PATH"
           
           # Backup current deployment
-          if [ -d "$DEPLOY_PATH" ] && [ "$(ls -A $DEPLOY_PATH)" ]; then
-            echo "💾 Creating backup: $BACKUP_PATH"
-            cp -r "$DEPLOY_PATH" "$BACKUP_PATH"
-            echo "BACKUP_PATH=$BACKUP_PATH" >> ~/.deploy_env
+          if [ -d "\$DEPLOY_PATH" ] && [ "\$(ls -A \$DEPLOY_PATH)" ]; then
+            echo "💾 Creating backup: \$BACKUP_PATH"
+            cp -r "\$DEPLOY_PATH" "\$BACKUP_PATH"
+            echo "BACKUP_PATH=\$BACKUP_PATH" >> ~/.deploy_env
           fi
           
           # Create releases directory structure
-          mkdir -p "$DEPLOY_PATH/releases"
-          mkdir -p "$DEPLOY_PATH/shared/storage"
+          mkdir -p "\$DEPLOY_PATH/releases"
+          mkdir -p "\$DEPLOY_PATH/shared/storage"
           
           echo "✅ Deployment directory prepared"
-          ENDSSH
+          EOF
 
       - name: Upload and extract deployment package
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
           echo "📤 Uploading deployment package..."
           scp deploy.tar.gz deploy-server:~/deploy.tar.gz
           
           echo "📦 Extracting package on server..."
-          ssh deploy-server << 'ENDSSH'
+          ssh deploy-server bash << EOF
           set -e
           
-          DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
-          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-          RELEASE_PATH="$DEPLOY_PATH/releases/$TIMESTAMP"
+          DEPLOY_PATH="$DEPLOY_PATH"
+          TIMESTAMP=\$(date +%Y%m%d_%H%M%S)
+          RELEASE_PATH="\${DEPLOY_PATH}/releases/\${TIMESTAMP}"
           
           # Create release directory
-          mkdir -p "$RELEASE_PATH"
+          mkdir -p "\$RELEASE_PATH"
           
           # Extract deployment package
-          tar -xzf ~/deploy.tar.gz -C "$RELEASE_PATH"
+          tar -xzf ~/deploy.tar.gz -C "\$RELEASE_PATH"
           rm ~/deploy.tar.gz
           
-          echo "RELEASE_PATH=$RELEASE_PATH" >> ~/.deploy_env
-          echo "✅ Package extracted to: $RELEASE_PATH"
-          ENDSSH
+          echo "RELEASE_PATH=\$RELEASE_PATH" >> ~/.deploy_env
+          echo "✅ Package extracted to: \$RELEASE_PATH"
+          EOF
 
       - name: Setup shared resources and permissions
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
           echo "🔗 Setting up shared resources..."
-          ssh deploy-server << 'ENDSSH'
+          ssh deploy-server bash << EOF
           set -e
           source ~/.deploy_env
           
-          DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+          DEPLOY_PATH="$DEPLOY_PATH"
           
           # Link shared storage
-          if [ -d "$RELEASE_PATH/storage" ]; then
-            rm -rf "$RELEASE_PATH/storage"
+          if [ -d "\$RELEASE_PATH/storage" ]; then
+            rm -rf "\$RELEASE_PATH/storage"
           fi
-          ln -s "$DEPLOY_PATH/shared/storage" "$RELEASE_PATH/storage"
+          ln -s "\$DEPLOY_PATH/shared/storage" "\$RELEASE_PATH/storage"
           
           # Copy .env if it exists in the main deployment path
-          if [ -f "$DEPLOY_PATH/.env" ]; then
-            cp "$DEPLOY_PATH/.env" "$RELEASE_PATH/.env"
+          if [ -f "\$DEPLOY_PATH/.env" ]; then
+            cp "\$DEPLOY_PATH/.env" "\$RELEASE_PATH/.env"
           fi
           
           # Set permissions
-          chmod -R 755 "$RELEASE_PATH"
-          chmod -R 775 "$DEPLOY_PATH/shared/storage"
+          chmod -R 755 "\$RELEASE_PATH"
+          chmod -R 775 "\$DEPLOY_PATH/shared/storage"
           
           echo "✅ Shared resources configured"
-          ENDSSH
+          EOF
 
       - name: Run deployment commands
         run: |
           echo "⚙️  Running deployment commands..."
-          ssh deploy-server << 'ENDSSH'
+          ssh deploy-server bash << 'EOF'
           set -e
           source ~/.deploy_env
           
-          cd "$RELEASE_PATH"
+          cd "\$RELEASE_PATH"
           
           # Run Laravel deployment commands
           echo "📝 Running migrations..."
@@ -654,62 +660,68 @@ jobs:
           php artisan view:cache
           
           echo "✅ Deployment commands completed"
-          ENDSSH
+          EOF
 
       - name: Switch to new release
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
           echo "🔄 Switching to new release..."
-          ssh deploy-server << 'ENDSSH'
+          ssh deploy-server bash << EOF
           set -e
           source ~/.deploy_env
           
-          DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+          DEPLOY_PATH="$DEPLOY_PATH"
           
           # Remove old current symlink or directory
-          if [ -L "$DEPLOY_PATH/current" ]; then
-            rm "$DEPLOY_PATH/current"
-          elif [ -d "$DEPLOY_PATH/current" ]; then
-            rm -rf "$DEPLOY_PATH/current"
+          if [ -L "\$DEPLOY_PATH/current" ]; then
+            rm "\$DEPLOY_PATH/current"
+          elif [ -d "\$DEPLOY_PATH/current" ]; then
+            rm -rf "\$DEPLOY_PATH/current"
           fi
           
           # Create symlink to new release
-          ln -s "$RELEASE_PATH" "$DEPLOY_PATH/current"
+          ln -s "\$RELEASE_PATH" "\$DEPLOY_PATH/current"
           
           echo "✅ Switched to new release"
-          ENDSSH
+          EOF
 
       - name: Cleanup old releases
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
           echo "🧹 Cleaning up old releases..."
-          ssh deploy-server << 'ENDSSH'
+          ssh deploy-server bash << EOF
           set -e
           
-          DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+          DEPLOY_PATH="$DEPLOY_PATH"
           
           # Keep only the latest 5 releases
-          cd "$DEPLOY_PATH/releases"
+          cd "\$DEPLOY_PATH/releases"
           ls -t | tail -n +6 | xargs -r rm -rf
           
           # Remove old backups (keep last 3)
-          cd "$(dirname "$DEPLOY_PATH")"
-          ls -td ${DEPLOY_PATH##*/}_backup_* 2>/dev/null | tail -n +4 | xargs -r rm -rf || true
+          cd "\$(dirname "\$DEPLOY_PATH")"
+          ls -td \${DEPLOY_PATH##*/}_backup_* 2>/dev/null | tail -n +4 | xargs -r rm -rf || true
           
           echo "✅ Cleanup completed"
-          ENDSSH
+          EOF
 
       - name: Verify deployment
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
           echo "✅ Deployment completed successfully!"
           echo "📊 Deployment summary:"
-          ssh deploy-server << 'ENDSSH'
+          ssh deploy-server bash << EOF
           source ~/.deploy_env
           
-          DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+          DEPLOY_PATH="$DEPLOY_PATH"
           
-          echo "Current release: $(readlink $DEPLOY_PATH/current)"
-          echo "Total releases: $(ls -1 $DEPLOY_PATH/releases | wc -l)"
+          echo "Current release: \$(readlink \$DEPLOY_PATH/current)"
+          echo "Total releases: \$(ls -1 \$DEPLOY_PATH/releases | wc -l)"
           
           # Cleanup deploy env
           rm -f ~/.deploy_env
-          ENDSSH
+          EOF
 
