@@ -707,7 +707,7 @@ jobs:
       - name: Run deployment commands
         run: |
           echo "⚙️  Running deployment commands..."
-          ssh deploy-server bash << 'EOF'
+          ssh deploy-server bash << EOF
           set -e
           
           # Load deployment environment variables
