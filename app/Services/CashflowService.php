@@ -24,7 +24,7 @@ class CashflowService
         $result = [];
 
         foreach ($entries as $entry) {
-            $balance += $entry->net_amount;
+            $balance = $balance + $entry->net_amount;
             $result[] = [
                 'date' => $entry->date,
                 'name' => $entry->name,
@@ -70,7 +70,7 @@ class CashflowService
                             'expense_amount' => $rule->amount,
                             'income_amount' => 0,
                         ]);
-                        $synced++;
+                        $synced = $synced + 1;
                     }
                 }
             }
@@ -99,7 +99,7 @@ class CashflowService
                             'expense_amount' => $plan->amount,
                             'income_amount' => 0,
                         ]);
-                        $synced++;
+                        $synced = $synced + 1;
                     }
                 }
             }

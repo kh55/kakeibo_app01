@@ -12,8 +12,7 @@ class CashflowController extends Controller
 {
     public function __construct(
         private CashflowService $cashflowService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of the resource.

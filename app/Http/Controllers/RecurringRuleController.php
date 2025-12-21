@@ -12,8 +12,7 @@ class RecurringRuleController extends Controller
 {
     public function __construct(
         private RecurringExpenseService $recurringExpenseService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of the resource.

@@ -86,15 +86,15 @@ class ImportExportController extends Controller
 
                 $imported++;
             } catch (\Exception $e) {
-                $errors[] = "行のインポートに失敗: " . $e->getMessage();
+                $errors[] = '行のインポートに失敗: '.$e->getMessage();
             }
         }
 
         fclose($handle);
 
         $message = "{$imported}件の取引をインポートしました。";
-        if (!empty($errors)) {
-            $message .= " エラー: " . count($errors) . "件";
+        if (! empty($errors)) {
+            $message .= ' エラー: '.count($errors).'件';
         }
 
         return redirect()->route('import-export.index')
@@ -117,7 +117,7 @@ class ImportExportController extends Controller
             ->orderBy('date')
             ->get();
 
-        $filename = "transactions_{$year}".str_pad($month, 2, '0', STR_PAD_LEFT).".csv";
+        $filename = "transactions_{$year}".str_pad($month, 2, '0', STR_PAD_LEFT).'.csv';
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
