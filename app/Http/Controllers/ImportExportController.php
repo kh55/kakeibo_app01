@@ -51,7 +51,7 @@ class ImportExportController extends Controller
                 $amount = $row[4] ?? null;
                 $isRecurring = isset($row[5]) && strtolower(trim($row[5])) === 'true';
 
-                if (!$dateStr || !$accountName || !$name || !$amount) {
+                if (! $dateStr || ! $accountName || ! $name || ! $amount) {
                     continue;
                 }
 
@@ -84,7 +84,7 @@ class ImportExportController extends Controller
                     'is_recurring' => $isRecurring,
                 ]);
 
-                $imported = $imported + 1;
+                $imported++;
             } catch (\Exception $e) {
                 $errors[] = '行のインポートに失敗: '.$e->getMessage();
             }
