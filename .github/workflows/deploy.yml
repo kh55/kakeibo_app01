@@ -64,7 +64,7 @@ jobs:
       - name: Run Laravel Pint
         run: vendor/bin/pint --test
 
-  deploy:
+  build:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -72,154 +72,286 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo_mysql, zip, gd, exif, pcntl, bcmath, xml, curl
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Composer dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction
+
+      - name: Install NPM dependencies
+        run: npm ci
+
+      - name: Build assets for production
+        run: npm run build
+
+      - name: Create deployment archive
+        run: |
+          tar -czf deploy.tar.gz \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='node_modules' \
+            --exclude='tests' \
+            --exclude='.env*' \
+            --exclude='docker*' \
+            --exclude='Dockerfile' \
+            --exclude='.dockerignore' \
+            --exclude='phpunit.xml' \
+            --exclude='*.md' \
+            ./
+
+      - name: Upload deployment archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-package
+          path: deploy.tar.gz
+          retention-days: 1
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Download deployment archive
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-package
+
       - name: Setup SSH
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_PASSPHRASE: ${{ secrets.SSH_PASSPHRASE }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
         run: |
           # Create .ssh directory
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           
-          # Check if SSH_PRIVATE_KEY is set
+          # Validate SSH_PRIVATE_KEY
           if [ -z "$SSH_PRIVATE_KEY" ]; then
-            echo "Error: SSH_PRIVATE_KEY secret is not set or is empty"
+            echo "❌ Error: SSH_PRIVATE_KEY secret is not set"
             exit 1
           fi
           
-          # Write SSH private key - preserve exact format including newlines
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          # Write SSH private key
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
           
-          # Verify the key file was created and has content
-          if [ ! -f ~/.ssh/id_rsa ]; then
-            echo "Error: SSH private key file was not created."
+          # Verify key file
+          if [ ! -s ~/.ssh/deploy_key ]; then
+            echo "❌ Error: SSH key file is empty"
             exit 1
           fi
           
-          if [ ! -s ~/.ssh/id_rsa ]; then
-            echo "Error: SSH private key file is empty."
-            exit 1
-          fi
+          echo "✅ SSH key file created ($(wc -l < ~/.ssh/deploy_key) lines)"
           
-          KEY_LINES=$(wc -l < ~/.ssh/id_rsa)
-          echo "SSH key file created successfully ($KEY_LINES lines)"
-          ls -la ~/.ssh/id_rsa
+          # Show key format (first and last line)
+          echo "📝 Key format check:"
+          head -1 ~/.ssh/deploy_key
+          tail -1 ~/.ssh/deploy_key
           
-          # Verify key format
-          echo "Checking SSH key format..."
-          head -1 ~/.ssh/id_rsa
-          tail -1 ~/.ssh/id_rsa
-          
-          # Test if key can be read by ssh-keygen
-          if ! ssh-keygen -l -f ~/.ssh/id_rsa 2>&1; then
-            echo "Warning: ssh-keygen could not read the key file"
-          fi
-          
-          # Check if key is encrypted
-          if grep -q "ENCRYPTED" ~/.ssh/id_rsa; then
-            echo "SSH key is encrypted (requires passphrase)"
-            HAS_PASSPHRASE=true
+          # Validate key with ssh-keygen
+          if ssh-keygen -l -f ~/.ssh/deploy_key 2>/dev/null; then
+            echo "✅ SSH key is valid"
           else
-            echo "SSH key is not encrypted"
-            HAS_PASSPHRASE=false
+            echo "⚠️  Warning: Could not validate key with ssh-keygen"
           fi
           
           # Add host to known_hosts
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          echo "🔑 Adding host to known_hosts..."
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
           
-          # Start ssh-agent
-          eval $(ssh-agent -s)
+          # Create SSH config for easier connection
+          cat > ~/.ssh/config << EOF
+          Host deploy-server
+            HostName $SSH_HOST
+            User ${{ secrets.SSH_USER }}
+            IdentityFile ~/.ssh/deploy_key
+            StrictHostKeyChecking accept-new
+            UserKnownHostsFile ~/.ssh/known_hosts
+          EOF
           
-          # Add SSH key with or without passphrase
-          if [ "$HAS_PASSPHRASE" = "true" ] || [ -n "$SSH_PASSPHRASE" ]; then
-            if [ -z "$SSH_PASSPHRASE" ]; then
-              echo "Error: SSH key is encrypted but SSH_PASSPHRASE is not set"
-              exit 1
-            fi
-            
-            echo "Installing expect for passphrase handling..."
-            sudo apt-get update -qq
-            sudo apt-get install -y -qq expect
-            
-            echo "Adding SSH key with passphrase..."
-            
-            # Create expect script
-            cat > /tmp/ssh-add-expect.exp << 'EXPECTEOF'
-            #!/usr/bin/expect -f
-            set timeout 10
-            set key_path [lindex $argv 0]
-            set passphrase [lindex $argv 1]
-            
-            spawn ssh-add $key_path
-            expect {
-              "Enter passphrase for" {
-                send "$passphrase\r"
-                expect {
-                  "Identity added:" {
-                    puts "SSH key added successfully"
-                    exit 0
-                  }
-                  "Bad passphrase" {
-                    puts "Error: Incorrect passphrase"
-                    exit 1
-                  }
-                  timeout {
-                    puts "Error: Timeout waiting for response"
-                    exit 1
-                  }
-                }
-              }
-              "Could not open a connection" {
-                puts "Error: ssh-agent not running"
-                exit 1
-              }
-              "Error loading key" {
-                puts "Error: Could not load key file"
-                exit 1
-              }
-              timeout {
-                puts "Error: Timeout waiting for passphrase prompt"
-                exit 1
-              }
-            }
-            EXPECTEOF
-            
-            chmod +x /tmp/ssh-add-expect.exp
-            
-            if ! /tmp/ssh-add-expect.exp "$HOME/.ssh/id_rsa" "$SSH_PASSPHRASE"; then
-              echo "Failed to add SSH key with passphrase"
-              rm -f /tmp/ssh-add-expect.exp
-              exit 1
-            fi
-            
-            rm -f /tmp/ssh-add-expect.exp
-          else
-            echo "Adding SSH key without passphrase..."
-            if ! ssh-add ~/.ssh/id_rsa 2>&1; then
-              echo "Error: Failed to add SSH key."
-              echo "The key might require a passphrase. Please set SSH_PASSPHRASE secret."
-              exit 1
-            fi
-          fi
+          chmod 600 ~/.ssh/config
           
-          echo "SSH key added successfully"
-          ssh-add -l
+          echo "✅ SSH configuration completed"
 
       - name: Test SSH Connection
         run: |
-          ssh -v -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "echo 'SSH connection successful'"
+          echo "🔌 Testing SSH connection..."
+          if ssh deploy-server "echo '✅ SSH connection successful'"; then
+            echo "✅ SSH connection test passed"
+          else
+            echo "❌ SSH connection test failed"
+            exit 1
+          fi
 
-      - name: Deploy via rsync
+      - name: Prepare deployment directory
         run: |
-          rsync -avz --delete \
-            --exclude '.git' \
-            --exclude '.env' \
-            --exclude 'node_modules' \
-            --exclude '.docker' \
-            --exclude 'docker-compose.yml' \
-            --exclude 'Dockerfile' \
-            --exclude '.dockerignore' \
-            -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa" \
-            ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}
+          echo "📁 Preparing deployment directory..."
+          ssh deploy-server << 'ENDSSH'
+          set -e
+          
+          DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          BACKUP_PATH="${DEPLOY_PATH}_backup_${TIMESTAMP}"
+          
+          # Create deployment directory if it doesn't exist
+          mkdir -p "$DEPLOY_PATH"
+          
+          # Backup current deployment
+          if [ -d "$DEPLOY_PATH" ] && [ "$(ls -A $DEPLOY_PATH)" ]; then
+            echo "💾 Creating backup: $BACKUP_PATH"
+            cp -r "$DEPLOY_PATH" "$BACKUP_PATH"
+            echo "BACKUP_PATH=$BACKUP_PATH" >> ~/.deploy_env
+          fi
+          
+          # Create releases directory structure
+          mkdir -p "$DEPLOY_PATH/releases"
+          mkdir -p "$DEPLOY_PATH/shared/storage"
+          
+          echo "✅ Deployment directory prepared"
+          ENDSSH
+
+      - name: Upload and extract deployment package
+        run: |
+          echo "📤 Uploading deployment package..."
+          scp deploy.tar.gz deploy-server:~/deploy.tar.gz
+          
+          echo "📦 Extracting package on server..."
+          ssh deploy-server << 'ENDSSH'
+          set -e
+          
+          DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          RELEASE_PATH="$DEPLOY_PATH/releases/$TIMESTAMP"
+          
+          # Create release directory
+          mkdir -p "$RELEASE_PATH"
+          
+          # Extract deployment package
+          tar -xzf ~/deploy.tar.gz -C "$RELEASE_PATH"
+          rm ~/deploy.tar.gz
+          
+          echo "RELEASE_PATH=$RELEASE_PATH" >> ~/.deploy_env
+          echo "✅ Package extracted to: $RELEASE_PATH"
+          ENDSSH
+
+      - name: Setup shared resources and permissions
+        run: |
+          echo "🔗 Setting up shared resources..."
+          ssh deploy-server << 'ENDSSH'
+          set -e
+          source ~/.deploy_env
+          
+          DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+          
+          # Link shared storage
+          if [ -d "$RELEASE_PATH/storage" ]; then
+            rm -rf "$RELEASE_PATH/storage"
+          fi
+          ln -s "$DEPLOY_PATH/shared/storage" "$RELEASE_PATH/storage"
+          
+          # Copy .env if it exists in the main deployment path
+          if [ -f "$DEPLOY_PATH/.env" ]; then
+            cp "$DEPLOY_PATH/.env" "$RELEASE_PATH/.env"
+          fi
+          
+          # Set permissions
+          chmod -R 755 "$RELEASE_PATH"
+          chmod -R 775 "$DEPLOY_PATH/shared/storage"
+          
+          echo "✅ Shared resources configured"
+          ENDSSH
+
+      - name: Run deployment commands
+        run: |
+          echo "⚙️  Running deployment commands..."
+          ssh deploy-server << 'ENDSSH'
+          set -e
+          source ~/.deploy_env
+          
+          cd "$RELEASE_PATH"
+          
+          # Run Laravel deployment commands
+          echo "📝 Running migrations..."
+          php artisan migrate --force
+          
+          echo "🗑️  Clearing caches..."
+          php artisan config:clear
+          php artisan cache:clear
+          php artisan route:clear
+          php artisan view:clear
+          
+          echo "📦 Optimizing..."
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+          
+          echo "✅ Deployment commands completed"
+          ENDSSH
+
+      - name: Switch to new release
+        run: |
+          echo "🔄 Switching to new release..."
+          ssh deploy-server << 'ENDSSH'
+          set -e
+          source ~/.deploy_env
+          
+          DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+          
+          # Remove old current symlink or directory
+          if [ -L "$DEPLOY_PATH/current" ]; then
+            rm "$DEPLOY_PATH/current"
+          elif [ -d "$DEPLOY_PATH/current" ]; then
+            rm -rf "$DEPLOY_PATH/current"
+          fi
+          
+          # Create symlink to new release
+          ln -s "$RELEASE_PATH" "$DEPLOY_PATH/current"
+          
+          echo "✅ Switched to new release"
+          ENDSSH
+
+      - name: Cleanup old releases
+        run: |
+          echo "🧹 Cleaning up old releases..."
+          ssh deploy-server << 'ENDSSH'
+          set -e
+          
+          DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+          
+          # Keep only the latest 5 releases
+          cd "$DEPLOY_PATH/releases"
+          ls -t | tail -n +6 | xargs -r rm -rf
+          
+          # Remove old backups (keep last 3)
+          cd "$(dirname "$DEPLOY_PATH")"
+          ls -td ${DEPLOY_PATH##*/}_backup_* 2>/dev/null | tail -n +4 | xargs -r rm -rf || true
+          
+          echo "✅ Cleanup completed"
+          ENDSSH
+
+      - name: Verify deployment
+        run: |
+          echo "✅ Deployment completed successfully!"
+          echo "📊 Deployment summary:"
+          ssh deploy-server << 'ENDSSH'
+          source ~/.deploy_env
+          
+          DEPLOY_PATH="${{ secrets.DEPLOY_PATH }}"
+          
+          echo "Current release: $(readlink $DEPLOY_PATH/current)"
+          echo "Total releases: $(ls -1 $DEPLOY_PATH/releases | wc -l)"
+          
+          # Cleanup deploy env
+          rm -f ~/.deploy_env
+          ENDSSH
 
