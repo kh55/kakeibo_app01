@@ -80,7 +80,7 @@ jobs:
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
           eval $(ssh-agent -s)
           if [ -n "${{ secrets.SSH_PASSPHRASE }}" ] && [ "${{ secrets.SSH_PASSPHRASE }}" != "" ]; then
-            apt-get update && apt-get install -y expect
+            sudo apt-get update && sudo apt-get install -y expect
             expect -c "spawn ssh-add ~/.ssh/id_rsa; expect \"Enter passphrase\"; send \"${{ secrets.SSH_PASSPHRASE }}\r\"; expect eof"
           else
             echo "Attempting to add SSH key without passphrase..."
