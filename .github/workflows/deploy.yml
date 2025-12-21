@@ -739,6 +739,32 @@ jobs:
           
           cd "\$RELEASE_PATH"
           
+          # Check PHP version
+          echo "🔍 Checking PHP version..."
+          PHP_VERSION=\$(php -r "echo PHP_VERSION;")
+          PHP_MAJOR_MINOR=\$(php -r "echo PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;")
+          echo "📋 Current PHP version: \$PHP_VERSION"
+          
+          # Check if PHP version meets requirements (>= 8.2.0)
+          PHP_REQUIRED="8.2.0"
+          if [ "\$(printf '%s\n' "\$PHP_REQUIRED" "\$PHP_VERSION" | sort -V | head -n1)" != "\$PHP_REQUIRED" ]; then
+            echo "❌ Error: PHP version \$PHP_VERSION is too old"
+            echo "📋 Required: PHP >= \$PHP_REQUIRED"
+            echo ""
+            echo "💡 Solutions:"
+            echo "  1. Upgrade PHP on the server to version 8.2 or higher"
+            echo "  2. Use a different PHP version if multiple versions are installed:"
+            echo "     - php8.2 artisan migrate"
+            echo "     - /usr/bin/php8.2 artisan migrate"
+            echo "  3. Check available PHP versions:"
+            echo "     - which -a php"
+            echo "     - ls -la /usr/bin/php*"
+            exit 1
+          fi
+          
+          echo "✅ PHP version meets requirements"
+          echo ""
+          
           # Run Laravel deployment commands
           echo "📝 Running migrations..."
           php artisan migrate --force
