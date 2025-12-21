@@ -614,22 +614,73 @@ jobs:
           echo "🔗 Setting up shared resources..."
           ssh deploy-server bash << EOF
           set -e
-          source ~/.deploy_env
+          
+          # Load deployment environment variables
+          if [ -f ~/.deploy_env ]; then
+            source ~/.deploy_env
+            echo "📋 Loaded RELEASE_PATH: \$RELEASE_PATH"
+          else
+            echo "❌ Error: ~/.deploy_env file not found"
+            exit 1
+          fi
           
           DEPLOY_PATH="$DEPLOY_PATH"
           
-          # Link shared storage
-          if [ -d "\$RELEASE_PATH/storage" ]; then
+          # Verify variables are set
+          if [ -z "\$RELEASE_PATH" ]; then
+            echo "❌ Error: RELEASE_PATH is not set"
+            echo "📝 Contents of ~/.deploy_env:"
+            cat ~/.deploy_env || echo "File is empty or cannot be read"
+            exit 1
+          fi
+          
+          if [ -z "\$DEPLOY_PATH" ]; then
+            echo "❌ Error: DEPLOY_PATH is not set"
+            exit 1
+          fi
+          
+          echo "📋 Using DEPLOY_PATH: \$DEPLOY_PATH"
+          echo "📋 Using RELEASE_PATH: \$RELEASE_PATH"
+          
+          # Verify directories exist
+          if [ ! -d "\$RELEASE_PATH" ]; then
+            echo "❌ Error: RELEASE_PATH directory does not exist: \$RELEASE_PATH"
+            exit 1
+          fi
+          
+          if [ ! -d "\$DEPLOY_PATH/shared/storage" ]; then
+            echo "⚠️  Warning: Shared storage directory does not exist, creating it..."
+            mkdir -p "\$DEPLOY_PATH/shared/storage"
+          fi
+          
+          # Link shared storage (use absolute paths)
+          if [ -d "\$RELEASE_PATH/storage" ] || [ -L "\$RELEASE_PATH/storage" ]; then
+            echo "🗑️  Removing existing storage directory/link..."
             rm -rf "\$RELEASE_PATH/storage"
           fi
+          
+          echo "🔗 Creating symlink from \$RELEASE_PATH/storage to \$DEPLOY_PATH/shared/storage"
           ln -s "\$DEPLOY_PATH/shared/storage" "\$RELEASE_PATH/storage"
+          
+          # Verify symlink was created
+          if [ -L "\$RELEASE_PATH/storage" ]; then
+            echo "✅ Symlink created successfully"
+            ls -la "\$RELEASE_PATH/storage"
+          else
+            echo "❌ Error: Failed to create symlink"
+            exit 1
+          fi
           
           # Copy .env if it exists in the main deployment path
           if [ -f "\$DEPLOY_PATH/.env" ]; then
+            echo "📋 Copying .env file..."
             cp "\$DEPLOY_PATH/.env" "\$RELEASE_PATH/.env"
+          else
+            echo "⚠️  Warning: .env file not found at \$DEPLOY_PATH/.env"
           fi
           
           # Set permissions
+          echo "🔐 Setting permissions..."
           chmod -R 755 "\$RELEASE_PATH"
           chmod -R 775 "\$DEPLOY_PATH/shared/storage"
           
