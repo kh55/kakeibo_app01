@@ -611,8 +611,10 @@ jobs:
             grep -v "^RELEASE_PATH=" ~/.deploy_env > ~/.deploy_env.tmp || true
             mv ~/.deploy_env.tmp ~/.deploy_env
           fi
-          echo "RELEASE_PATH=$RELEASE_PATH" >> ~/.deploy_env
+          # Use escaped variable to write server-side RELEASE_PATH value
+          echo "RELEASE_PATH=\$RELEASE_PATH" >> ~/.deploy_env
           echo "✅ Package extracted to: \$RELEASE_PATH"
+          echo "📝 Written to ~/.deploy_env: RELEASE_PATH=\$RELEASE_PATH"
           EOF
 
       - name: Setup shared resources and permissions
