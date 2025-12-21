@@ -86,11 +86,17 @@ GitHub Actionsによる自動デプロイが設定されています。
 
 ### 必要なSecrets
 
+GitHubリポジトリの Settings → Secrets and variables → Actions で設定してください。
+
+**Repository secrets**（推奨）または**Environment secrets**のどちらでも使用できます。
+
 - `SSH_PRIVATE_KEY`: サーバーへのSSH秘密鍵
 - `SSH_HOST`: サーバーのホスト名
 - `SSH_USER`: SSHユーザー名
 - `DEPLOY_PATH`: デプロイ先のパス（例: /home/user/public_html）
 - `SSH_PASSPHRASE`: SSH秘密鍵のパスフレーズ（パスフレーズがある場合のみ。パスフレーズなしの鍵を使用する場合は設定不要）
+
+**注意**: 複数の環境（staging, production）を分けたい場合は、Environment secretsを使用し、ワークフローファイルで`environment`を指定してください。
 
 ## セキュリティ
 
