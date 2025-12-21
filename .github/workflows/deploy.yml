@@ -81,12 +81,7 @@ jobs:
           eval $(ssh-agent -s)
           if [ -n "${{ secrets.SSH_PASSPHRASE }}" ]; then
             apt-get update && apt-get install -y expect
-            expect << EOF
-              spawn ssh-add ~/.ssh/id_rsa
-              expect "Enter passphrase"
-              send "${{ secrets.SSH_PASSPHRASE }}\r"
-              expect eof
-            EOF
+            expect -c "spawn ssh-add ~/.ssh/id_rsa; expect \"Enter passphrase\"; send \"${{ secrets.SSH_PASSPHRASE }}\r\"; expect eof"
           else
             ssh-add ~/.ssh/id_rsa
           fi
