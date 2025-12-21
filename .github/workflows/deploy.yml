@@ -215,35 +215,8 @@ jobs:
             exit 1
           fi
           
-          # Write SSH private key - handle multiple formats
-          # Method 1: Try direct write (if GitHub Secrets preserved newlines correctly)
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
-          
-          # Check if key looks valid (has BEGIN marker)
-          if ! grep -q "BEGIN.*PRIVATE KEY" ~/.ssh/deploy_key 2>/dev/null; then
-            echo "⚠️  First attempt failed, trying alternative methods..."
-            
-            # Method 2: Try treating as base64 encoded
-            if echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/deploy_key.tmp 2>/dev/null; then
-              if grep -q "BEGIN.*PRIVATE KEY" ~/.ssh/deploy_key.tmp 2>/dev/null; then
-                echo "✅ Key was base64 encoded, decoded successfully"
-                mv ~/.ssh/deploy_key.tmp ~/.ssh/deploy_key
-              else
-                rm -f ~/.ssh/deploy_key.tmp
-              fi
-            fi
-            
-            # Method 3: Try replacing literal \n with actual newlines
-            if ! grep -q "BEGIN.*PRIVATE KEY" ~/.ssh/deploy_key 2>/dev/null; then
-              echo "$SSH_PRIVATE_KEY" | sed 's/\\n/\n/g' > ~/.ssh/deploy_key
-            fi
-            
-            # Method 4: Try using printf with explicit newline handling
-            if ! grep -q "BEGIN.*PRIVATE KEY" ~/.ssh/deploy_key 2>/dev/null; then
-              printf '%b' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
-            fi
-          fi
-          
+          # Write SSH private key using printf to preserve newlines
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           
           # Verify key file
@@ -258,100 +231,110 @@ jobs:
           
           # Detailed key format validation
           echo "📝 Key format validation:"
-          FIRST_LINE=$(head -1 ~/.ssh/deploy_key | head -c 50)
-          LAST_LINE=$(tail -1 ~/.ssh/deploy_key | head -c 50)
-          echo "First line (first 50 chars): $FIRST_LINE"
-          echo "Last line (first 50 chars): $LAST_LINE"
+          echo "First line: $(head -1 ~/.ssh/deploy_key)"
+          echo "Last line: $(tail -1 ~/.ssh/deploy_key)"
           
           # Check if key has proper BEGIN/END markers
           if ! grep -q "BEGIN.*PRIVATE KEY" ~/.ssh/deploy_key; then
             echo "❌ Error: SSH key does not contain BEGIN PRIVATE KEY marker"
-            echo ""
-            echo "📝 Diagnostic information:"
-            echo "  File size: $(wc -c < ~/.ssh/deploy_key) bytes"
-            echo "  Line count: $(wc -l < ~/.ssh/deploy_key) lines"
-            echo "  First 100 characters: $(head -c 100 ~/.ssh/deploy_key)"
-            echo "  Last 100 characters: $(tail -c 100 ~/.ssh/deploy_key)"
-            echo ""
-            echo "📋 First 10 lines preview (first 30 chars each):"
-            head -10 ~/.ssh/deploy_key | head -c 300 | cat -A
-            echo ""
-            echo "  (Showing first 300 characters to help diagnose formatting issues)"
-            echo ""
-            echo ""
-            echo "💡 Common issues and solutions:"
-            echo "  1. GitHub Secrets may not preserve newlines correctly"
-            echo "     Solution: Base64 encode your key before saving to GitHub Secrets"
-            echo "     Command: cat ~/.ssh/id_rsa | base64"
-            echo ""
-            echo "  2. Key may have extra whitespace or be on a single line"
-            echo "     Solution: Ensure the key includes BEGIN and END lines with proper newlines"
-            echo ""
-            echo "  3. Key format may be incorrect"
-            echo "     Solution: Use standard OpenSSH format (BEGIN OPENSSH PRIVATE KEY)"
-            exit 1
-          fi
-          
-          if ! grep -q "END.*PRIVATE KEY" ~/.ssh/deploy_key; then
-            echo "❌ Error: SSH key does not contain END PRIVATE KEY marker"
-            echo "📝 Last 10 lines (for debugging):"
-            tail -10 ~/.ssh/deploy_key | sed 's/./*/g' | head -c 50
+            echo "📝 First 5 lines of key file:"
+            head -5 ~/.ssh/deploy_key
             echo ""
             echo "💡 Make sure SSH_PRIVATE_KEY secret includes the full key with BEGIN/END lines"
             exit 1
           fi
           
-          # Detect key type
-          if grep -q "BEGIN RSA PRIVATE KEY" ~/.ssh/deploy_key; then
+          if ! grep -q "END.*PRIVATE KEY" ~/.ssh/deploy_key; then
+            echo "❌ Error: SSH key does not contain END PRIVATE KEY marker"
+            echo "📝 Last 5 lines of key file:"
+            tail -5 ~/.ssh/deploy_key
+            echo ""
+            echo "💡 Make sure SSH_PRIVATE_KEY secret includes the full key with BEGIN/END lines"
+            exit 1
+          fi
+          
+          # Detect key type and encryption status
+          IS_ENCRYPTED=false
+          if grep -q "BEGIN ENCRYPTED PRIVATE KEY" ~/.ssh/deploy_key; then
+            KEY_TYPE="PKCS#8 Encrypted"
+            IS_ENCRYPTED=true
+          elif grep -q "BEGIN RSA PRIVATE KEY" ~/.ssh/deploy_key; then
             KEY_TYPE="RSA"
           elif grep -q "BEGIN OPENSSH PRIVATE KEY" ~/.ssh/deploy_key; then
             KEY_TYPE="OpenSSH"
+            # Check if OpenSSH key is encrypted
+            if grep -q "ENCRYPTED" ~/.ssh/deploy_key; then
+              IS_ENCRYPTED=true
+            fi
           elif grep -q "BEGIN EC PRIVATE KEY" ~/.ssh/deploy_key; then
             KEY_TYPE="ECDSA"
           elif grep -q "BEGIN ED25519 PRIVATE KEY" ~/.ssh/deploy_key; then
             KEY_TYPE="ED25519"
+          elif grep -q "ENCRYPTED" ~/.ssh/deploy_key; then
+            KEY_TYPE="Encrypted (unknown format)"
+            IS_ENCRYPTED=true
           else
             KEY_TYPE="Unknown"
           fi
           echo "🔑 Detected key type: $KEY_TYPE"
           
+          # Early check for encrypted keys
+          if [ "$IS_ENCRYPTED" = "true" ]; then
+            echo "🔒 Encrypted key detected"
+            if [ -z "$SSH_PASSPHRASE" ]; then
+              echo "❌ Error: Encrypted key requires SSH_PASSPHRASE secret"
+              echo "💡 Solution: Set SSH_PASSPHRASE secret in GitHub Secrets"
+              echo ""
+              echo "📝 Key file diagnostic:"
+              echo "  Lines: $KEY_LINES"
+              echo "  Size: $KEY_SIZE bytes"
+              echo "  Type: $KEY_TYPE (Encrypted)"
+              echo ""
+              echo "📋 First 5 lines:"
+              head -5 ~/.ssh/deploy_key
+              echo ""
+              echo "📋 Last 5 lines:"
+              tail -5 ~/.ssh/deploy_key
+              exit 1
+            else
+              echo "✅ SSH_PASSPHRASE is set"
+            fi
+          fi
+          
           # Validate key with ssh-keygen
           echo ""
           echo "🔍 Validating key with ssh-keygen..."
-          if ssh-keygen -l -f ~/.ssh/deploy_key 2>&1; then
-            echo "✅ SSH key is valid"
-            echo "🔑 Public key fingerprint:"
-            ssh-keygen -l -f ~/.ssh/deploy_key
+          if [ "$IS_ENCRYPTED" = "true" ]; then
+            # For encrypted keys, we can't validate without passphrase in non-interactive mode
+            # We'll skip validation here and handle it during ssh-add
+            echo "⚠️  Skipping key validation (encrypted keys require passphrase)"
+            echo "   Key will be validated during SSH connection setup"
           else
-            KEYGEN_ERROR=$(ssh-keygen -l -f ~/.ssh/deploy_key 2>&1)
-            echo "❌ Error: Could not validate key with ssh-keygen"
-            echo "Error message: $KEYGEN_ERROR"
-            echo ""
-            echo "📝 Key file diagnostic:"
-            echo "  Lines: $KEY_LINES"
-            echo "  Size: $KEY_SIZE bytes"
-            echo "  Type: $KEY_TYPE"
-            echo ""
-            echo "📋 First 10 lines:"
-            head -10 ~/.ssh/deploy_key
-            echo ""
-            echo "📋 Last 10 lines:"
-            tail -10 ~/.ssh/deploy_key
-            echo ""
-            echo "💡 Possible issues:"
-            echo "  1. Key format is incorrect (missing BEGIN/END lines)"
-            echo "  2. Key has extra whitespace or characters"
-            echo "  3. Key is corrupted or incomplete"
-            echo "  4. Key requires a passphrase (set SSH_PASSPHRASE secret)"
-            exit 1
-          fi
-          
-          # Check if key is encrypted (requires passphrase)
-          if grep -q "ENCRYPTED" ~/.ssh/deploy_key; then
-            echo "⚠️  Warning: SSH key appears to be encrypted"
-            if [ -z "$SSH_PASSPHRASE" ]; then
-              echo "❌ Error: Encrypted key detected but SSH_PASSPHRASE is not set"
-              echo "💡 Solution: Either set SSH_PASSPHRASE secret or use a passphrase-less key"
+            # For non-encrypted keys, validate normally
+            if ssh-keygen -l -f ~/.ssh/deploy_key 2>&1; then
+              echo "✅ SSH key is valid"
+              echo "🔑 Public key fingerprint:"
+              ssh-keygen -l -f ~/.ssh/deploy_key
+            else
+              KEYGEN_ERROR=$(ssh-keygen -l -f ~/.ssh/deploy_key 2>&1)
+              echo "❌ Error: Could not validate key with ssh-keygen"
+              echo "Error message: $KEYGEN_ERROR"
+              echo ""
+              echo "📝 Key file diagnostic:"
+              echo "  Lines: $KEY_LINES"
+              echo "  Size: $KEY_SIZE bytes"
+              echo "  Type: $KEY_TYPE"
+              echo ""
+              echo "📋 First 10 lines:"
+              head -10 ~/.ssh/deploy_key
+              echo ""
+              echo "📋 Last 10 lines:"
+              tail -10 ~/.ssh/deploy_key
+              echo ""
+              echo "💡 Possible issues:"
+              echo "  1. Key format is incorrect (missing BEGIN/END lines)"
+              echo "  2. Key has extra whitespace or characters"
+              echo "  3. Key is corrupted or incomplete"
               exit 1
             fi
           fi
@@ -379,6 +362,83 @@ jobs:
           chmod 600 ~/.ssh/config
           
           echo "✅ SSH configuration completed"
+          
+          # Start ssh-agent and add key (with passphrase if needed)
+          echo ""
+          echo "🔐 Setting up ssh-agent..."
+          eval $(ssh-agent -s)
+          
+          if [ "$IS_ENCRYPTED" = "true" ]; then
+            echo "🔑 Adding encrypted key to ssh-agent..."
+            # Install expect for passphrase handling
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq expect > /dev/null 2>&1
+            
+            # Create expect script to handle passphrase
+            cat > /tmp/ssh-add-expect.exp << 'EXPECTEOF'
+#!/usr/bin/expect -f
+set timeout 10
+set key_path [lindex $argv 0]
+set passphrase [lindex $argv 1]
+
+spawn ssh-add $key_path
+expect {
+  "Enter passphrase for" {
+    send "$passphrase\r"
+    expect {
+      "Identity added:" {
+        puts "SSH key added successfully"
+        exit 0
+      }
+      "Bad passphrase" {
+        puts "Error: Incorrect passphrase"
+        exit 1
+      }
+      timeout {
+        puts "Error: Timeout waiting for response"
+        exit 1
+      }
+    }
+  }
+  "Could not open a connection" {
+    puts "Error: ssh-agent not running"
+    exit 1
+  }
+  "Error loading key" {
+    puts "Error: Could not load key file"
+    exit 1
+  }
+  timeout {
+    puts "Error: Timeout waiting for passphrase prompt"
+    exit 1
+  }
+}
+EXPECTEOF
+            
+            chmod +x /tmp/ssh-add-expect.exp
+            
+            if /tmp/ssh-add-expect.exp ~/.ssh/deploy_key "$SSH_PASSPHRASE"; then
+              echo "✅ Encrypted key added to ssh-agent"
+            else
+              echo "❌ Failed to add encrypted key to ssh-agent"
+              echo "💡 Check if SSH_PASSPHRASE is correct"
+              rm -f /tmp/ssh-add-expect.exp
+              exit 1
+            fi
+            
+            rm -f /tmp/ssh-add-expect.exp
+          else
+            echo "🔑 Adding key to ssh-agent..."
+            if ssh-add ~/.ssh/deploy_key 2>&1; then
+              echo "✅ Key added to ssh-agent"
+            else
+              echo "⚠️  Warning: Could not add key to ssh-agent (may require passphrase)"
+            fi
+          fi
+          
+          echo ""
+          echo "📋 Keys in ssh-agent:"
+          ssh-add -l || echo "No keys in ssh-agent"
 
       - name: Test SSH Connection
         run: |
@@ -388,20 +448,29 @@ jobs:
           echo ""
           echo "🔑 SSH Key Info:"
           ls -la ~/.ssh/deploy_key
-          ssh-keygen -l -f ~/.ssh/deploy_key || echo "⚠️  Could not read key fingerprint"
           echo ""
-          echo "🔍 Attempting connection with verbose output..."
-          ssh -vvv deploy-server "echo '✅ SSH connection successful'" || {
+          echo "📋 Keys in ssh-agent:"
+          ssh-add -l || echo "No keys in ssh-agent"
+          echo ""
+          echo "🔍 Attempting connection..."
+          # Try connection (ssh-agent will be used if key is loaded)
+          if ssh deploy-server "echo '✅ SSH connection successful'" 2>&1; then
+            echo "✅ SSH connection test passed"
+          else
             echo ""
             echo "❌ SSH connection test failed"
+            echo ""
+            echo "🔍 Attempting connection with verbose output for debugging..."
+            ssh -vvv deploy-server "echo 'test'" 2>&1 | tail -20 || true
+            echo ""
             echo "📝 Troubleshooting steps:"
             echo "1. Verify SSH_PRIVATE_KEY secret contains the full private key (including BEGIN/END lines)"
             echo "2. Ensure the corresponding public key is in ~/.ssh/authorized_keys on the server"
             echo "3. Check SSH_USER and SSH_HOST secrets are correct"
-            echo "4. Verify the private key does not require a passphrase (or set SSH_PASSPHRASE secret)"
+            echo "4. If using encrypted key, verify SSH_PASSPHRASE secret is correct"
+            echo "5. Check server logs for authentication failures"
             exit 1
-          }
-          echo "✅ SSH connection test passed"
+          fi
 
       - name: Prepare deployment directory
         run: |
