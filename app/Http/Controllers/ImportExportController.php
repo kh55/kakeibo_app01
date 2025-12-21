@@ -84,7 +84,7 @@ class ImportExportController extends Controller
                     'is_recurring' => $isRecurring,
                 ]);
 
-                $imported++;
+                $imported = $imported + 1;
             } catch (\Exception $e) {
                 $errors[] = '行のインポートに失敗: '.$e->getMessage();
             }
@@ -93,7 +93,7 @@ class ImportExportController extends Controller
         fclose($handle);
 
         $message = "{$imported}件の取引をインポートしました。";
-        if (! empty($errors)) {
+        if (!empty($errors)) {
             $message .= ' エラー: '.count($errors).'件';
         }
 
