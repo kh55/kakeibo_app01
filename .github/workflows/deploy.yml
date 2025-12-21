@@ -165,5 +165,6 @@ jobs:
             --exclude 'docker-compose.yml' \
             --exclude 'Dockerfile' \
             --exclude '.dockerignore' \
+            -e "ssh -o StrictHostKeyChecking=no" \
             ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}
 
