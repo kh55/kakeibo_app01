@@ -215,8 +215,35 @@ jobs:
             exit 1
           fi
           
-          # Write SSH private key using printf to preserve newlines
-          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          # Write SSH private key - handle multiple formats
+          # Method 1: Try direct write (if GitHub Secrets preserved newlines correctly)
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          
+          # Check if key looks valid (has BEGIN marker)
+          if ! grep -q "BEGIN.*PRIVATE KEY" ~/.ssh/deploy_key 2>/dev/null; then
+            echo "⚠️  First attempt failed, trying alternative methods..."
+            
+            # Method 2: Try treating as base64 encoded
+            if echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/deploy_key.tmp 2>/dev/null; then
+              if grep -q "BEGIN.*PRIVATE KEY" ~/.ssh/deploy_key.tmp 2>/dev/null; then
+                echo "✅ Key was base64 encoded, decoded successfully"
+                mv ~/.ssh/deploy_key.tmp ~/.ssh/deploy_key
+              else
+                rm -f ~/.ssh/deploy_key.tmp
+              fi
+            fi
+            
+            # Method 3: Try replacing literal \n with actual newlines
+            if ! grep -q "BEGIN.*PRIVATE KEY" ~/.ssh/deploy_key 2>/dev/null; then
+              echo "$SSH_PRIVATE_KEY" | sed 's/\\n/\n/g' > ~/.ssh/deploy_key
+            fi
+            
+            # Method 4: Try using printf with explicit newline handling
+            if ! grep -q "BEGIN.*PRIVATE KEY" ~/.ssh/deploy_key 2>/dev/null; then
+              printf '%b' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+            fi
+          fi
+          
           chmod 600 ~/.ssh/deploy_key
           
           # Verify key file
@@ -231,23 +258,44 @@ jobs:
           
           # Detailed key format validation
           echo "📝 Key format validation:"
-          echo "First line: $(head -1 ~/.ssh/deploy_key)"
-          echo "Last line: $(tail -1 ~/.ssh/deploy_key)"
+          FIRST_LINE=$(head -1 ~/.ssh/deploy_key | head -c 50)
+          LAST_LINE=$(tail -1 ~/.ssh/deploy_key | head -c 50)
+          echo "First line (first 50 chars): $FIRST_LINE"
+          echo "Last line (first 50 chars): $LAST_LINE"
           
           # Check if key has proper BEGIN/END markers
           if ! grep -q "BEGIN.*PRIVATE KEY" ~/.ssh/deploy_key; then
             echo "❌ Error: SSH key does not contain BEGIN PRIVATE KEY marker"
-            echo "📝 First 5 lines of key file:"
-            head -5 ~/.ssh/deploy_key
             echo ""
-            echo "💡 Make sure SSH_PRIVATE_KEY secret includes the full key with BEGIN/END lines"
+            echo "📝 Diagnostic information:"
+            echo "  File size: $(wc -c < ~/.ssh/deploy_key) bytes"
+            echo "  Line count: $(wc -l < ~/.ssh/deploy_key) lines"
+            echo "  First 100 characters: $(head -c 100 ~/.ssh/deploy_key)"
+            echo "  Last 100 characters: $(tail -c 100 ~/.ssh/deploy_key)"
+            echo ""
+            echo "📋 First 10 lines preview (first 30 chars each):"
+            head -10 ~/.ssh/deploy_key | head -c 300 | cat -A
+            echo ""
+            echo "  (Showing first 300 characters to help diagnose formatting issues)"
+            echo ""
+            echo ""
+            echo "💡 Common issues and solutions:"
+            echo "  1. GitHub Secrets may not preserve newlines correctly"
+            echo "     Solution: Base64 encode your key before saving to GitHub Secrets"
+            echo "     Command: cat ~/.ssh/id_rsa | base64"
+            echo ""
+            echo "  2. Key may have extra whitespace or be on a single line"
+            echo "     Solution: Ensure the key includes BEGIN and END lines with proper newlines"
+            echo ""
+            echo "  3. Key format may be incorrect"
+            echo "     Solution: Use standard OpenSSH format (BEGIN OPENSSH PRIVATE KEY)"
             exit 1
           fi
           
           if ! grep -q "END.*PRIVATE KEY" ~/.ssh/deploy_key; then
             echo "❌ Error: SSH key does not contain END PRIVATE KEY marker"
-            echo "📝 Last 5 lines of key file:"
-            tail -5 ~/.ssh/deploy_key
+            echo "📝 Last 10 lines (for debugging):"
+            tail -10 ~/.ssh/deploy_key | sed 's/./*/g' | head -c 50
             echo ""
             echo "💡 Make sure SSH_PRIVATE_KEY secret includes the full key with BEGIN/END lines"
             exit 1
