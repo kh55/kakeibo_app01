@@ -368,6 +368,10 @@ jobs:
           echo "🔐 Setting up ssh-agent..."
           eval $(ssh-agent -s)
           
+          # Export ssh-agent environment variables for next steps
+          echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $GITHUB_ENV
+          echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> $GITHUB_ENV
+          
           if [ "$IS_ENCRYPTED" = "true" ]; then
             echo "🔑 Adding encrypted key to ssh-agent..."
             # Install expect for passphrase handling
@@ -441,8 +445,83 @@ jobs:
           ssh-add -l || echo "No keys in ssh-agent"
 
       - name: Test SSH Connection
+        env:
+          SSH_PASSPHRASE: ${{ secrets.SSH_PASSPHRASE }}
         run: |
           echo "🔌 Testing SSH connection..."
+          
+          # Check if ssh-agent is available from previous step
+          if [ -n "$SSH_AUTH_SOCK" ] && [ -S "$SSH_AUTH_SOCK" ]; then
+            echo "✅ ssh-agent is available from previous step"
+            export SSH_AUTH_SOCK
+            export SSH_AGENT_PID
+          else
+            echo "⚠️  ssh-agent not available, starting new one..."
+            eval $(ssh-agent -s)
+            export SSH_AUTH_SOCK
+            export SSH_AGENT_PID
+            
+            # Check if key is encrypted and add to ssh-agent
+            if grep -q "BEGIN ENCRYPTED PRIVATE KEY" ~/.ssh/deploy_key || grep -q "ENCRYPTED" ~/.ssh/deploy_key; then
+              if [ -z "$SSH_PASSPHRASE" ]; then
+                echo "❌ Error: Encrypted key requires SSH_PASSPHRASE"
+                exit 1
+              fi
+              
+              echo "🔑 Adding encrypted key to ssh-agent..."
+              sudo apt-get update -qq
+              sudo apt-get install -y -qq expect > /dev/null 2>&1
+              
+              # Create expect script
+              {
+                echo '#!/usr/bin/expect -f'
+                echo 'set timeout 10'
+                echo 'set key_path [lindex $argv 0]'
+                echo 'set passphrase [lindex $argv 1]'
+                echo ''
+                echo 'spawn ssh-add $key_path'
+                echo 'expect {'
+                echo '  "Enter passphrase for" {'
+                echo '    send "$passphrase\r"'
+                echo '    expect {'
+                echo '      "Identity added:" {'
+                echo '        puts "SSH key added successfully"'
+                echo '        exit 0'
+                echo '      }'
+                echo '      "Bad passphrase" {'
+                echo '        puts "Error: Incorrect passphrase"'
+                echo '        exit 1'
+                echo '      }'
+                echo '      timeout {'
+                echo '        puts "Error: Timeout waiting for response"'
+                echo '        exit 1'
+                echo '      }'
+                echo '    }'
+                echo '  }'
+                echo '  timeout {'
+                echo '    puts "Error: Timeout waiting for passphrase prompt"'
+                echo '    exit 1'
+                echo '  }'
+                echo '}'
+              } > /tmp/ssh-add-expect.exp
+              
+              chmod +x /tmp/ssh-add-expect.exp
+              
+              if /tmp/ssh-add-expect.exp ~/.ssh/deploy_key "$SSH_PASSPHRASE"; then
+                echo "✅ Encrypted key added to ssh-agent"
+              else
+                echo "❌ Failed to add encrypted key"
+                exit 1
+              fi
+              
+              rm -f /tmp/ssh-add-expect.exp
+            else
+              echo "🔑 Adding key to ssh-agent..."
+              ssh-add ~/.ssh/deploy_key || echo "⚠️  Could not add key to ssh-agent"
+            fi
+          fi
+          
+          echo ""
           echo "📋 SSH Configuration:"
           cat ~/.ssh/config
           echo ""
