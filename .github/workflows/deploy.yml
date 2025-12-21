@@ -79,11 +79,15 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
           eval $(ssh-agent -s)
-          if [ -n "${{ secrets.SSH_PASSPHRASE }}" ]; then
+          if [ -n "${{ secrets.SSH_PASSPHRASE }}" ] && [ "${{ secrets.SSH_PASSPHRASE }}" != "" ]; then
             apt-get update && apt-get install -y expect
             expect -c "spawn ssh-add ~/.ssh/id_rsa; expect \"Enter passphrase\"; send \"${{ secrets.SSH_PASSPHRASE }}\r\"; expect eof"
           else
-            ssh-add ~/.ssh/id_rsa
+            echo "Attempting to add SSH key without passphrase..."
+            DISPLAY=:0 SSH_ASKPASS=/bin/echo ssh-add ~/.ssh/id_rsa < /dev/null || {
+              echo "Error: SSH key requires a passphrase. Please set SSH_PASSPHRASE secret or use a passphrase-less key for deployment."
+              exit 1
+            }
           fi
 
       - name: Deploy via rsync
