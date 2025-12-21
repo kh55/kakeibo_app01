@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
-use App\Models\User;
 use App\Models\CashflowEntry;
-use App\Models\RecurringRule;
 use App\Models\InstallmentPlan;
+use App\Models\RecurringRule;
+use App\Models\User;
 use Carbon\Carbon;
 
 class CashflowService
@@ -62,7 +62,7 @@ class CashflowService
                         ->where('name', $rule->name)
                         ->exists();
 
-                    if (!$exists) {
+                    if (! $exists) {
                         CashflowEntry::create([
                             'user_id' => $user->id,
                             'date' => $entryDate,
@@ -91,7 +91,7 @@ class CashflowService
                         ->where('name', $plan->name)
                         ->exists();
 
-                    if (!$exists) {
+                    if (! $exists) {
                         CashflowEntry::create([
                             'user_id' => $user->id,
                             'date' => $entryDate,

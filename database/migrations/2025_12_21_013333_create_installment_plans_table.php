@@ -24,7 +24,7 @@ return new class extends Migration
             $table->foreignId('category_id')->nullable()->constrained()->onDelete('set null');
             $table->boolean('enabled')->default(true);
             $table->timestamps();
-            
+
             $table->index(['user_id', 'enabled']);
         });
     }

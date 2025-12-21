@@ -14,6 +14,7 @@ class AccountController extends Controller
     public function index()
     {
         $accounts = Auth::user()->accounts()->orderBy('sort_order')->get();
+
         return view('accounts.index', compact('accounts'));
     }
 
@@ -49,6 +50,7 @@ class AccountController extends Controller
     public function edit(Account $account)
     {
         $this->authorize('update', $account);
+
         return view('accounts.edit', compact('account'));
     }
 

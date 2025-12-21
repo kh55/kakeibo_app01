@@ -4,15 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\CashflowEntry;
 use App\Services\CashflowService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
 
 class CashflowController extends Controller
 {
     public function __construct(
         private CashflowService $cashflowService
-    ) {}
+    ) {
+    }
 
     /**
      * Display a listing of the resource.
@@ -74,6 +75,7 @@ class CashflowController extends Controller
     public function edit(CashflowEntry $cashflowEntry)
     {
         $this->authorize('update', $cashflowEntry);
+
         return view('cashflow.edit', compact('cashflowEntry'));
     }
 

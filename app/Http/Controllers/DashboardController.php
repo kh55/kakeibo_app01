@@ -3,15 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Services\DashboardService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
     public function __construct(
         private DashboardService $dashboardService
-    ) {}
+    ) {
+    }
 
     /**
      * Display the dashboard.

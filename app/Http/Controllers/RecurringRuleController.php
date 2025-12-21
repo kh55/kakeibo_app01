@@ -4,15 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\RecurringRule;
 use App\Services\RecurringExpenseService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
 
 class RecurringRuleController extends Controller
 {
     public function __construct(
         private RecurringExpenseService $recurringExpenseService
-    ) {}
+    ) {
+    }
 
     /**
      * Display a listing of the resource.
