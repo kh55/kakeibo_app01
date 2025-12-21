@@ -375,45 +375,45 @@ jobs:
             sudo apt-get install -y -qq expect > /dev/null 2>&1
             
             # Create expect script to handle passphrase
-            cat > /tmp/ssh-add-expect.exp << 'EXPECTEOF'
-#!/usr/bin/expect -f
-set timeout 10
-set key_path [lindex $argv 0]
-set passphrase [lindex $argv 1]
-
-spawn ssh-add $key_path
-expect {
-  "Enter passphrase for" {
-    send "$passphrase\r"
-    expect {
-      "Identity added:" {
-        puts "SSH key added successfully"
-        exit 0
-      }
-      "Bad passphrase" {
-        puts "Error: Incorrect passphrase"
-        exit 1
-      }
-      timeout {
-        puts "Error: Timeout waiting for response"
-        exit 1
-      }
-    }
-  }
-  "Could not open a connection" {
-    puts "Error: ssh-agent not running"
-    exit 1
-  }
-  "Error loading key" {
-    puts "Error: Could not load key file"
-    exit 1
-  }
-  timeout {
-    puts "Error: Timeout waiting for passphrase prompt"
-    exit 1
-  }
-}
-EXPECTEOF
+            {
+              echo '#!/usr/bin/expect -f'
+              echo 'set timeout 10'
+              echo 'set key_path [lindex $argv 0]'
+              echo 'set passphrase [lindex $argv 1]'
+              echo ''
+              echo 'spawn ssh-add $key_path'
+              echo 'expect {'
+              echo '  "Enter passphrase for" {'
+              echo '    send "$passphrase\r"'
+              echo '    expect {'
+              echo '      "Identity added:" {'
+              echo '        puts "SSH key added successfully"'
+              echo '        exit 0'
+              echo '      }'
+              echo '      "Bad passphrase" {'
+              echo '        puts "Error: Incorrect passphrase"'
+              echo '        exit 1'
+              echo '      }'
+              echo '      timeout {'
+              echo '        puts "Error: Timeout waiting for response"'
+              echo '        exit 1'
+              echo '      }'
+              echo '    }'
+              echo '  }'
+              echo '  "Could not open a connection" {'
+              echo '    puts "Error: ssh-agent not running"'
+              echo '    exit 1'
+              echo '  }'
+              echo '  "Error loading key" {'
+              echo '    puts "Error: Could not load key file"'
+              echo '    exit 1'
+              echo '  }'
+              echo '  timeout {'
+              echo '    puts "Error: Timeout waiting for passphrase prompt"'
+              echo '    exit 1'
+              echo '  }'
+              echo '}'
+            } > /tmp/ssh-add-expect.exp
             
             chmod +x /tmp/ssh-add-expect.exp
             
