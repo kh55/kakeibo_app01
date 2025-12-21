@@ -138,56 +138,62 @@ jobs:
               exit 1
             fi
             
-            echo "Installing expect and sshpass for passphrase handling..."
+            echo "Installing expect for passphrase handling..."
             sudo apt-get update -qq
-            sudo apt-get install -y -qq expect sshpass
+            sudo apt-get install -y -qq expect
             
             echo "Adding SSH key with passphrase..."
             
-            # Use expect to handle passphrase
-            expect << 'EOF'
-set timeout 10
-set key_path "$env(HOME)/.ssh/id_rsa"
-set passphrase "$env(SSH_PASSPHRASE)"
-
-spawn ssh-add $key_path
-expect {
-  "Enter passphrase for" {
-    send "$passphrase\r"
-    expect {
-      "Identity added:" {
-        puts "SSH key added successfully"
-        exit 0
-      }
-      "Bad passphrase" {
-        puts "Error: Incorrect passphrase"
-        exit 1
-      }
-      timeout {
-        puts "Error: Timeout waiting for response"
-        exit 1
-      }
-    }
-  }
-  "Could not open a connection" {
-    puts "Error: ssh-agent not running"
-    exit 1
-  }
-  "Error loading key" {
-    puts "Error: Could not load key file"
-    exit 1
-  }
-  timeout {
-    puts "Error: Timeout waiting for passphrase prompt"
-    exit 1
-  }
-}
-EOF
+            # Create expect script
+            cat > /tmp/ssh-add-expect.exp << 'EXPECTEOF'
+            #!/usr/bin/expect -f
+            set timeout 10
+            set key_path [lindex $argv 0]
+            set passphrase [lindex $argv 1]
             
-            if [ $? -ne 0 ]; then
+            spawn ssh-add $key_path
+            expect {
+              "Enter passphrase for" {
+                send "$passphrase\r"
+                expect {
+                  "Identity added:" {
+                    puts "SSH key added successfully"
+                    exit 0
+                  }
+                  "Bad passphrase" {
+                    puts "Error: Incorrect passphrase"
+                    exit 1
+                  }
+                  timeout {
+                    puts "Error: Timeout waiting for response"
+                    exit 1
+                  }
+                }
+              }
+              "Could not open a connection" {
+                puts "Error: ssh-agent not running"
+                exit 1
+              }
+              "Error loading key" {
+                puts "Error: Could not load key file"
+                exit 1
+              }
+              timeout {
+                puts "Error: Timeout waiting for passphrase prompt"
+                exit 1
+              }
+            }
+            EXPECTEOF
+            
+            chmod +x /tmp/ssh-add-expect.exp
+            
+            if ! /tmp/ssh-add-expect.exp "$HOME/.ssh/id_rsa" "$SSH_PASSPHRASE"; then
               echo "Failed to add SSH key with passphrase"
+              rm -f /tmp/ssh-add-expect.exp
               exit 1
             fi
+            
+            rm -f /tmp/ssh-add-expect.exp
           else
             echo "Adding SSH key without passphrase..."
             if ! ssh-add ~/.ssh/id_rsa 2>&1; then
