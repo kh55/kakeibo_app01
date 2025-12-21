@@ -171,7 +171,14 @@ GitHubリポジトリの **Settings → Secrets and variables → Actions** で�
 
 #### 必須のSecrets
 
-- `SSH_PRIVATE_KEY`: サーバーへのSSH秘密鍵（完全な形式、`-----BEGIN ... PRIVATE KEY-----`から`-----END ... PRIVATE KEY-----`まで含む）
+- `SSH_PRIVATE_KEY`: サーバーへのSSH秘密鍵
+  - **推奨方法（base64エンコード）**: GitHub Secretsでは改行が正しく保存されない場合があるため、base64エンコードして保存することを推奨します
+    ```bash
+    # 秘密鍵をbase64エンコード
+    cat ~/.ssh/id_rsa | base64
+    # 出力された文字列をそのままSSH_PRIVATE_KEYに設定
+    ```
+  - **直接保存する場合**: 完全な形式で保存（`-----BEGIN ... PRIVATE KEY-----`から`-----END ... PRIVATE KEY-----`まで、改行を含む）
 - `SSH_HOST`: サーバーのホスト名またはIPアドレス（例: `example.com` または `192.168.1.100`）
 - `SSH_USER`: SSHユーザー名（例: `deploy` または `www-data`）
 - `DEPLOY_PATH`: デプロイ先のパス（例: `/var/www/app` または `/home/user/public_html`）
