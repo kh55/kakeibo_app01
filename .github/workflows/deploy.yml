@@ -78,14 +78,26 @@ jobs:
           chmod 700 ~/.ssh
           
           # Write SSH private key
+          if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+            echo "Error: SSH_PRIVATE_KEY secret is not set or is empty"
+            exit 1
+          fi
+          
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           
-          # Verify the key file was created
+          # Verify the key file was created and has content
           if [ ! -f ~/.ssh/id_rsa ]; then
             echo "Error: SSH private key file was not created. Check SSH_PRIVATE_KEY secret."
             exit 1
           fi
+          
+          if [ ! -s ~/.ssh/id_rsa ]; then
+            echo "Error: SSH private key file is empty. Check SSH_PRIVATE_KEY secret."
+            exit 1
+          fi
+          
+          echo "SSH key file created successfully ($(wc -l < ~/.ssh/id_rsa) lines)"
           
           # Add host to known_hosts
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
@@ -107,6 +119,9 @@ jobs:
                 \"Identity added\" {
                   exit 0
                 }
+                \"Could not open a connection to your authentication agent\" {
+                  exit 1
+                }
                 eof {
                   exit 0
                 }
@@ -114,10 +129,12 @@ jobs:
                   exit 1
                 }
               }
-            " || {
-              echo "Error: Failed to add SSH key with passphrase"
+            "
+            EXPECT_EXIT=$?
+            if [ $EXPECT_EXIT -ne 0 ]; then
+              echo "Error: Failed to add SSH key with passphrase (exit code: $EXPECT_EXIT)"
               exit 1
-            }
+            fi
           else
             echo "Attempting to add SSH key without passphrase..."
             DISPLAY=:0 SSH_ASKPASS=/bin/echo ssh-add ~/.ssh/id_rsa < /dev/null || {
