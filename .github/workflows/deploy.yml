@@ -84,8 +84,8 @@ jobs:
             exit 1
           fi
           
-          # Write SSH private key using printf to handle special characters
-          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          # Write SSH private key - ensure proper format
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           
           # Verify the key file was created and has content
@@ -102,6 +102,18 @@ jobs:
           KEY_LINES=$(wc -l < ~/.ssh/id_rsa)
           echo "SSH key file created successfully ($KEY_LINES lines)"
           ls -la ~/.ssh/id_rsa
+          
+          # Verify key format
+          echo "Checking SSH key format..."
+          head -1 ~/.ssh/id_rsa
+          tail -1 ~/.ssh/id_rsa
+          
+          # Check if key is encrypted
+          if grep -q "ENCRYPTED" ~/.ssh/id_rsa; then
+            echo "SSH key is encrypted (requires passphrase)"
+          else
+            echo "SSH key is not encrypted"
+          fi
           
           # Add host to known_hosts
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
@@ -142,12 +154,14 @@ jobs:
               }
             "; then
               echo "Error: Failed to add SSH key with passphrase"
+              ssh-add ~/.ssh/id_rsa || echo "Direct ssh-add also failed"
               exit 1
             fi
           else
             echo "Attempting to add SSH key without passphrase..."
-            if ! DISPLAY=:0 SSH_ASKPASS=/bin/echo ssh-add ~/.ssh/id_rsa < /dev/null; then
-              echo "Error: SSH key requires a passphrase. Please set SSH_PASSPHRASE secret or use a passphrase-less key for deployment."
+            if ! ssh-add ~/.ssh/id_rsa 2>&1; then
+              echo "Error: Failed to add SSH key. The key might require a passphrase."
+              echo "Please set SSH_PASSPHRASE secret or use a passphrase-less key for deployment."
               exit 1
             fi
           fi
@@ -157,7 +171,7 @@ jobs:
 
       - name: Test SSH Connection
         run: |
-          ssh -v -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "echo 'SSH connection successful'"
+          ssh -v -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "echo 'SSH connection successful'"
 
       - name: Deploy via rsync
         run: |
@@ -169,6 +183,6 @@ jobs:
             --exclude 'docker-compose.yml' \
             --exclude 'Dockerfile' \
             --exclude '.dockerignore' \
-            -e "ssh -o StrictHostKeyChecking=no" \
+            -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa" \
             ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}
 
