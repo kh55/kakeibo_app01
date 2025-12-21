@@ -158,8 +158,10 @@ class ImportExportController extends Controller
             if (is_numeric($dateStr)) {
                 // Excel serial date starts from 1900-01-01
                 $excelEpoch = Carbon::create(1899, 12, 30);
+
                 return $excelEpoch->addDays(intval($dateStr));
             }
+
             // Fallback to first day of specified month
             return Carbon::create($year, $month, 1);
         }
