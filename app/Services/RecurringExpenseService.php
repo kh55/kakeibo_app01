@@ -35,7 +35,7 @@ class RecurringExpenseService
                 ->where('is_recurring', true)
                 ->exists();
 
-            if (!$exists) {
+            if (! $exists) {
                 Transaction::create([
                     'user_id' => $user->id,
                     'date' => $transactionDate,
