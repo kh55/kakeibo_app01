@@ -566,6 +566,9 @@ jobs:
           # Create deployment directory if it doesn't exist
           mkdir -p "\$DEPLOY_PATH"
           
+          # Initialize deploy_env file (clear existing)
+          > ~/.deploy_env
+          
           # Backup current deployment
           if [ -d "\$DEPLOY_PATH" ] && [ "\$(ls -A \$DEPLOY_PATH)" ]; then
             echo "💾 Creating backup: \$BACKUP_PATH"
@@ -602,7 +605,12 @@ jobs:
           tar -xzf ~/deploy.tar.gz -C "\$RELEASE_PATH"
           rm ~/deploy.tar.gz
           
-          # Write RELEASE_PATH to deploy_env (without escaping)
+          # Write RELEASE_PATH to deploy_env (append to existing file)
+          # Remove existing RELEASE_PATH line if present, then add new one
+          if [ -f ~/.deploy_env ]; then
+            grep -v "^RELEASE_PATH=" ~/.deploy_env > ~/.deploy_env.tmp || true
+            mv ~/.deploy_env.tmp ~/.deploy_env
+          fi
           echo "RELEASE_PATH=$RELEASE_PATH" >> ~/.deploy_env
           echo "✅ Package extracted to: \$RELEASE_PATH"
           EOF
@@ -617,8 +625,15 @@ jobs:
           
           # Load deployment environment variables
           if [ -f ~/.deploy_env ]; then
-            source ~/.deploy_env
+            # Get the last non-empty value for each variable
+            RELEASE_PATH=\$(grep "^RELEASE_PATH=" ~/.deploy_env | grep -v "RELEASE_PATH=$" | tail -1 | cut -d'=' -f2-)
+            BACKUP_PATH=\$(grep "^BACKUP_PATH=" ~/.deploy_env | grep -v "BACKUP_PATH=$" | tail -1 | cut -d'=' -f2-)
+            export RELEASE_PATH
+            export BACKUP_PATH
             echo "📋 Loaded RELEASE_PATH: \$RELEASE_PATH"
+            if [ -n "\$BACKUP_PATH" ]; then
+              echo "📋 Loaded BACKUP_PATH: \$BACKUP_PATH"
+            fi
           else
             echo "❌ Error: ~/.deploy_env file not found"
             exit 1
@@ -695,7 +710,9 @@ jobs:
           
           # Load deployment environment variables
           if [ -f ~/.deploy_env ]; then
-            source ~/.deploy_env
+            # Get the last non-empty value for each variable
+            RELEASE_PATH=\$(grep "^RELEASE_PATH=" ~/.deploy_env | grep -v "RELEASE_PATH=$" | tail -1 | cut -d'=' -f2-)
+            export RELEASE_PATH
             echo "📋 Loaded RELEASE_PATH: \$RELEASE_PATH"
           else
             echo "❌ Error: ~/.deploy_env file not found"
@@ -745,7 +762,12 @@ jobs:
           echo "🔄 Switching to new release..."
           ssh deploy-server bash << EOF
           set -e
-          source ~/.deploy_env
+          
+          # Load deployment environment variables
+          if [ -f ~/.deploy_env ]; then
+            RELEASE_PATH=\$(grep "^RELEASE_PATH=" ~/.deploy_env | grep -v "RELEASE_PATH=$" | tail -1 | cut -d'=' -f2-)
+            export RELEASE_PATH
+          fi
           
           DEPLOY_PATH="$DEPLOY_PATH"
           
@@ -790,7 +812,11 @@ jobs:
           echo "✅ Deployment completed successfully!"
           echo "📊 Deployment summary:"
           ssh deploy-server bash << EOF
-          source ~/.deploy_env
+          # Load deployment environment variables (optional for summary)
+          if [ -f ~/.deploy_env ]; then
+            RELEASE_PATH=\$(grep "^RELEASE_PATH=" ~/.deploy_env | grep -v "RELEASE_PATH=$" | tail -1 | cut -d'=' -f2-)
+            export RELEASE_PATH
+          fi
           
           DEPLOY_PATH="$DEPLOY_PATH"
           
