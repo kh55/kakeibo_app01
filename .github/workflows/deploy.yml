@@ -770,15 +770,21 @@ jobs:
           php artisan migrate --force
           
           echo "🗑️  Clearing caches..."
-          php artisan config:clear
-          php artisan cache:clear
-          php artisan route:clear
-          php artisan view:clear
+          # Temporarily disable exit on error for cache clearing (non-critical operations)
+          set +e
+          php artisan config:clear && echo "✅ Config cache cleared" || echo "⚠️  Warning: config:clear failed (may not be cached)"
+          php artisan cache:clear && echo "✅ Application cache cleared" || echo "⚠️  Warning: cache:clear failed"
+          php artisan route:clear && echo "✅ Route cache cleared" || echo "⚠️  Warning: route:clear failed (may not be cached)"
+          php artisan view:clear && echo "✅ View cache cleared" || echo "⚠️  Warning: view:clear failed (views may not exist yet)"
+          set -e
           
           echo "📦 Optimizing..."
-          php artisan config:cache
-          php artisan route:cache
-          php artisan view:cache
+          # Cache operations - continue even if some fail
+          set +e
+          php artisan config:cache && echo "✅ Config cached" || echo "⚠️  Warning: config:cache failed"
+          php artisan route:cache && echo "✅ Routes cached" || echo "⚠️  Warning: route:cache failed"
+          php artisan view:cache && echo "✅ Views cached" || echo "⚠️  Warning: view:cache failed (views may not exist)"
+          set -e
           
           echo "✅ Deployment commands completed"
           EOF
