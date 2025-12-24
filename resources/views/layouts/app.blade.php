@@ -33,6 +33,12 @@
                     </div>
                 @endif
 
+                @isset($header)
+                    <div class="mb-4">
+                        {{ $header }}
+                    </div>
+                @endisset
+
                 {{ $slot }}
             </div>
         </main>
