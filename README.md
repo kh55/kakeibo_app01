@@ -142,7 +142,134 @@ ssh-keygen -y -f ~/.ssh/your_private_key
 
 #### 4. Webサーバーの設定
 
-NginxやApacheのドキュメントルートを`current/public`に設定します：
+##### さくらインターネットのレンタルサーバー向け設定
+
+さくらインターネットのレンタルサーバーでは、Apacheが使用されており、`.htaccess`ファイルで設定を行います。
+
+**さくらインターネットのレンタルサーバー仕様**:
+- **Webサーバー**: Apache
+- **PHP**: 8.2以上（サーバーパネルで設定可能）
+- **データベース**: MySQL 8.0（`mysql80.ユーザー名.sakura.ne.jp`）
+- **SSH接続**: 対応（SSHサーバー: `sshXXX.sakura.ne.jp`）
+- **利用可能なツール**: Git、Composer、Node.js、npm等
+- **ドキュメントルート**: 
+  - メインドメイン: `/home/ユーザー名/www/ドメイン名/`
+  - サブドメイン: `/home/ユーザー名/www/サブドメイン.ドメイン名/`（例: `/home/crossroad2u/www/kakeibo.crossroad-j.info/`）
+
+**デプロイ先のパス構造**:
+```
+/home/crossroad2u/www/crossroad-j.info/kakeibo/
+├── releases/          # リリース履歴
+├── shared/            # 共有リソース
+│   └── storage/      # ストレージ
+├── current -> releases/YYYYMMDD_HHMMSS/  # 現在のリリースへのシンボリックリンク
+└── .env              # 環境変数ファイル
+```
+
+**設定手順**:
+
+1. **ディレクトリ構造の作成**:
+```bash
+# サーバーにSSH接続
+ssh crossroad2u@crossroad-j.info
+
+# デプロイディレクトリの作成
+mkdir -p /home/crossroad2u/www/crossroad-j.info/kakeibo/{releases,shared/storage}
+chmod -R 755 /home/crossroad2u/www/crossroad-j.info/kakeibo
+chmod -R 775 /home/crossroad2u/www/crossroad-j.info/kakeibo/shared/storage
+```
+
+2. **ルートディレクトリに.htaccessファイルを作成**:
+さくらインターネットでは、ドキュメントルートは通常 `/home/crossroad2u/www/crossroad-j.info/` になります。
+`kakeibo/` ディレクトリにアクセスした際に `current/public` にリダイレクトするため、以下の`.htaccess`ファイルを `/home/crossroad2u/www/crossroad-j.info/kakeibo/.htaccess` に配置します：
+
+```bash
+# プロジェクトルートの .htaccess.sakura をコピー
+cp .htaccess.sakura /home/crossroad2u/www/crossroad-j.info/kakeibo/.htaccess
+```
+
+または、手動で以下の内容を `/home/crossroad2u/www/crossroad-j.info/kakeibo/.htaccess` に作成：
+
+```apache
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # ファイルやディレクトリが存在しない場合のみリダイレクト
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    
+    # current/public ディレクトリが存在する場合のみリダイレクト
+    RewriteCond %{DOCUMENT_ROOT}/kakeibo/current/public -d
+    
+    # current/public にリダイレクト
+    RewriteRule ^(.*)$ /kakeibo/current/public/$1 [L]
+</IfModule>
+```
+
+**注意**: プロジェクトルートに `.htaccess.sakura` というテンプレートファイルが用意されています。これをデプロイ先の `kakeibo/` ディレクトリに `.htaccess` として配置してください。
+
+3. **サブドメインを使用する場合（kakeibo.crossroad-j.info）**:
+
+**推奨方法**: さくらのサーバーパネルで、サブドメイン `kakeibo.crossroad-j.info` のドキュメントルートを直接 `/home/crossroad2u/www/crossroad-j.info/kakeibo/current/public` に設定してください。
+この場合、`.htaccess`ファイルは不要です（`public/.htaccess`のみ使用）。
+
+**代替方法**: サブドメインのドキュメントルートが `/home/crossroad2u/www/kakeibo.crossroad-j.info/` の場合、そこに`.htaccess`ファイルを配置してリダイレクトします：
+```bash
+# サブドメインのドキュメントルートに.htaccessを配置
+cp .htaccess.sakura /home/crossroad2u/www/kakeibo.crossroad-j.info/.htaccess
+```
+
+4. **さくらのサーバーパネルでの設定（メインドメインの場合）**:
+さくらのサーバーパネルで、ドメイン `crossroad-j.info` のドキュメントルートを `/home/crossroad2u/www/crossroad-j.info/kakeibo/current/public` に変更できる場合は、そちらを推奨します。
+この場合、上記の`.htaccess`ファイルは不要です。
+
+5. **パーミッションの設定**:
+```bash
+# storageディレクトリのパーミッション設定
+chmod -R 775 /home/crossroad2u/www/crossroad-j.info/kakeibo/shared/storage
+chmod -R 775 /home/crossroad2u/www/crossroad-j.info/kakeibo/current/storage
+chmod -R 775 /home/crossroad2u/www/crossroad-j.info/kakeibo/current/bootstrap/cache
+```
+
+6. **PHPバージョンの確認**:
+さくらインターネットのレンタルサーバーでは、PHP 8.2以上が利用可能です。
+サーバーパネルでPHPバージョンを確認・設定してください。
+
+7. **.envファイルの設定**:
+```bash
+# .envファイルを配置
+nano /home/crossroad2u/www/crossroad-j.info/kakeibo/.env
+```
+
+`.env`ファイルの設定例（さくらインターネット向け）:
+```env
+APP_NAME=Laravel
+APP_ENV=production
+APP_KEY=base64:...（php artisan key:generateで生成）
+APP_DEBUG=false
+APP_URL=https://kakeibo.crossroad-j.info
+
+DB_CONNECTION=mysql
+DB_HOST=mysql80.crossroad2u.sakura.ne.jp
+DB_PORT=3306
+DB_DATABASE=crossroad2u_kakeibo01
+DB_USERNAME=crossroad2u_kakeibo01
+DB_PASSWORD=your_password
+
+# その他の設定...
+```
+
+**注意事項**:
+- さくらインターネットのレンタルサーバーでは、`/home/ユーザー名/www/ドメイン名/` がドキュメントルートになります
+- サブディレクトリにアプリを配置する場合、パスの調整が必要です
+- サブドメインを使用する場合、ドキュメントルートを直接設定することを推奨します
+- `APP_URL`には、実際のアクセスURLを設定してください
+  - サブドメインの場合: `https://kakeibo.crossroad-j.info`
+  - サブディレクトリの場合: `https://crossroad-j.info/kakeibo`
+
+##### その他のWebサーバー（Nginx等）
+
+NginxやApacheで直接設定できる場合の例：
 
 **Nginx例**:
 ```nginx
@@ -171,17 +298,15 @@ GitHubリポジトリの **Settings → Secrets and variables → Actions** で�
 
 #### 必須のSecrets
 
-- `SSH_PRIVATE_KEY`: サーバーへのSSH秘密鍵
-  - **推奨方法（base64エンコード）**: GitHub Secretsでは改行が正しく保存されない場合があるため、base64エンコードして保存することを推奨します
-    ```bash
-    # 秘密鍵をbase64エンコード
-    cat ~/.ssh/id_rsa | base64
-    # 出力された文字列をそのままSSH_PRIVATE_KEYに設定
-    ```
-  - **直接保存する場合**: 完全な形式で保存（`-----BEGIN ... PRIVATE KEY-----`から`-----END ... PRIVATE KEY-----`まで、改行を含む）
+- `SSH_PRIVATE_KEY`: サーバーへのSSH秘密鍵（完全な形式、`-----BEGIN ... PRIVATE KEY-----`から`-----END ... PRIVATE KEY-----`まで含む）
 - `SSH_HOST`: サーバーのホスト名またはIPアドレス（例: `example.com` または `192.168.1.100`）
 - `SSH_USER`: SSHユーザー名（例: `deploy` または `www-data`）
 - `DEPLOY_PATH`: デプロイ先のパス（例: `/var/www/app` または `/home/user/public_html`）
+
+**さくらインターネット向けの設定例**:
+- `SSH_HOST`: `crossroad-j.info` または `sshXXX.sakura.ne.jp`（さくらのSSHサーバー）
+- `SSH_USER`: `crossroad2u`（さくらのアカウント名）
+- `DEPLOY_PATH`: `/home/crossroad2u/www/crossroad-j.info/kakeibo`
 
 #### オプションのSecrets
 
@@ -258,6 +383,59 @@ ln -s releases/20231221_110000 current  # 前のリリースに切り替え
 - サーバーにSSH接続して手動でマイグレーションを実行
 - データベースのバックアップを確認
 - マイグレーションファイルに問題がないか確認
+
+#### さくらインターネット特有の問題
+
+**エラー**: 404 Not Found または ページが表示されない
+
+**解決方法**:
+1. `.htaccess`ファイルが正しく配置されているか確認
+   ```bash
+   ls -la /home/crossroad2u/www/crossroad-j.info/kakeibo/.htaccess
+   ```
+2. `current`シンボリックリンクが正しく設定されているか確認
+   ```bash
+   ls -la /home/crossroad2u/www/crossroad-j.info/kakeibo/current
+   ```
+3. `current/public`ディレクトリが存在するか確認
+   ```bash
+   ls -la /home/crossroad2u/www/crossroad-j.info/kakeibo/current/public
+   ```
+4. さくらのサーバーパネルで、PHPバージョンが8.2以上に設定されているか確認
+
+**エラー**: データベース接続エラー
+
+**解決方法**:
+1. `.env`ファイルのデータベース設定を確認
+   - `DB_HOST`: `mysql80.crossroad2u.sakura.ne.jp`（さくらのMySQLサーバー）
+   - `DB_DATABASE`: さくらのデータベース名
+   - `DB_USERNAME`: さくらのデータベースユーザー名
+   - `DB_PASSWORD`: さくらのデータベースパスワード
+2. さくらのサーバーパネルで、データベースが作成されているか確認
+3. データベースユーザーに適切な権限が付与されているか確認
+
+**エラー**: パーミッションエラー（ログやキャッシュが書き込めない）
+
+**解決方法**:
+```bash
+# storageディレクトリのパーミッションを設定
+chmod -R 775 /home/crossroad2u/www/crossroad-j.info/kakeibo/shared/storage
+chmod -R 775 /home/crossroad2u/www/crossroad-j.info/kakeibo/current/storage
+chmod -R 775 /home/crossroad2u/www/crossroad-j.info/kakeibo/current/bootstrap/cache
+
+# 所有者を確認（必要に応じて変更）
+chown -R crossroad2u:crossroad2u /home/crossroad2u/www/crossroad-j.info/kakeibo/shared/storage
+```
+
+**エラー**: APP_KEYが設定されていない
+
+**解決方法**:
+```bash
+# サーバーにSSH接続して、アプリケーションキーを生成
+cd /home/crossroad2u/www/crossroad-j.info/kakeibo/current
+php artisan key:generate
+# 生成されたキーを .env ファイルにコピー
+```
 
 ## セキュリティ
 

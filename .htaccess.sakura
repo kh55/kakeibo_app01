@@ -1,0 +1,9 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # すでに /current/ 配下なら何もしない
+  RewriteCond %{REQUEST_URI} !^/current/
+
+  # / を /current/public/ に内部的に割り当て
+  RewriteRule ^(.*)$ current/public/$1 [L]
+</IfModule>
