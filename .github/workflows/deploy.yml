@@ -580,6 +580,19 @@ jobs:
           mkdir -p "\$DEPLOY_PATH/releases"
           mkdir -p "\$DEPLOY_PATH/shared/storage"
           
+          # Create required Laravel storage subdirectories
+          echo "📁 Creating Laravel storage subdirectories..."
+          mkdir -p "\$DEPLOY_PATH/shared/storage/framework/views"
+          mkdir -p "\$DEPLOY_PATH/shared/storage/framework/cache"
+          mkdir -p "\$DEPLOY_PATH/shared/storage/framework/cache/data"
+          mkdir -p "\$DEPLOY_PATH/shared/storage/framework/sessions"
+          mkdir -p "\$DEPLOY_PATH/shared/storage/framework/testing"
+          mkdir -p "\$DEPLOY_PATH/shared/storage/logs"
+          mkdir -p "\$DEPLOY_PATH/shared/storage/app/public"
+          
+          # Set initial permissions
+          chmod -R 775 "\$DEPLOY_PATH/shared/storage"
+          
           echo "✅ Deployment directory prepared"
           EOF
 
@@ -670,6 +683,16 @@ jobs:
             mkdir -p "\$DEPLOY_PATH/shared/storage"
           fi
           
+          # Ensure all required Laravel storage subdirectories exist
+          echo "📁 Ensuring Laravel storage subdirectories exist..."
+          mkdir -p "\$DEPLOY_PATH/shared/storage/framework/views"
+          mkdir -p "\$DEPLOY_PATH/shared/storage/framework/cache"
+          mkdir -p "\$DEPLOY_PATH/shared/storage/framework/cache/data"
+          mkdir -p "\$DEPLOY_PATH/shared/storage/framework/sessions"
+          mkdir -p "\$DEPLOY_PATH/shared/storage/framework/testing"
+          mkdir -p "\$DEPLOY_PATH/shared/storage/logs"
+          mkdir -p "\$DEPLOY_PATH/shared/storage/app/public"
+          
           # Link shared storage (use absolute paths)
           if [ -d "\$RELEASE_PATH/storage" ] || [ -L "\$RELEASE_PATH/storage" ]; then
             echo "🗑️  Removing existing storage directory/link..."
@@ -696,10 +719,26 @@ jobs:
             echo "⚠️  Warning: .env file not found at \$DEPLOY_PATH/.env"
           fi
           
+          # Create bootstrap/cache directory if it doesn't exist
+          echo "📁 Ensuring bootstrap/cache directory exists..."
+          mkdir -p "\$RELEASE_PATH/bootstrap/cache"
+          
           # Set permissions
           echo "🔐 Setting permissions..."
           chmod -R 755 "\$RELEASE_PATH"
           chmod -R 775 "\$DEPLOY_PATH/shared/storage"
+          chmod -R 775 "\$RELEASE_PATH/bootstrap/cache"
+          
+          # Verify storage structure
+          echo "🔍 Verifying storage structure..."
+          echo "Storage symlink:"
+          ls -la "\$RELEASE_PATH/storage" || echo "⚠️  Warning: Storage symlink verification failed"
+          echo ""
+          echo "Storage subdirectories:"
+          ls -la "\$DEPLOY_PATH/shared/storage/" || echo "⚠️  Warning: Could not list storage directory"
+          echo ""
+          echo "Framework subdirectories:"
+          ls -la "\$DEPLOY_PATH/shared/storage/framework/" || echo "⚠️  Warning: Could not list framework directory"
           
           echo "✅ Shared resources configured"
           EOF
