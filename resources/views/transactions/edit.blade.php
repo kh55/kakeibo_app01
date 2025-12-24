@@ -21,7 +21,8 @@
                 </div>
                 <div class="mb-3">
                     <label for="account_id" class="form-label">支払手段</label>
-                    <select name="account_id" id="account_id" class="form-select" required>
+                    <select name="account_id" id="account_id" class="form-select">
+                        <option value="">未選択</option>
                         @foreach($accounts as $account)
                         <option value="{{ $account->id }}" {{ old('account_id', $transaction->account_id) == $account->id ? 'selected' : '' }}>
                             {{ $account->name }}
@@ -69,5 +70,43 @@
             </form>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const typeSelect = document.getElementById('type');
+            const accountSelect = document.getElementById('account_id');
+
+            function updateAccountRequired() {
+                if (typeSelect.value === 'income') {
+                    accountSelect.removeAttribute('required');
+                    if (accountSelect.value === '') {
+                        // 既に未選択の場合はそのまま
+                    } else if (!accountSelect.querySelector('option[value=""]')) {
+                        // 未選択オプションがない場合は追加（念のため）
+                    }
+                } else {
+                    accountSelect.setAttribute('required', 'required');
+                    // 支出の場合、未選択の場合は最初のアカウントを選択
+                    if (accountSelect.value === '') {
+                        const firstAccount = accountSelect.querySelector('option:not([value=""])');
+                        if (firstAccount) {
+                            accountSelect.value = firstAccount.value;
+                        }
+                    }
+                }
+            }
+
+            // 初期状態を設定
+            updateAccountRequired();
+
+            // 種別変更時に支払手段を更新
+            typeSelect.addEventListener('change', function() {
+                if (typeSelect.value === 'income') {
+                    accountSelect.value = '';
+                }
+                updateAccountRequired();
+            });
+        });
+    </script>
 </x-app-layout>
 

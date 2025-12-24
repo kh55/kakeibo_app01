@@ -20,7 +20,8 @@
                 </div>
                 <div class="mb-3">
                     <label for="account_id" class="form-label">支払手段</label>
-                    <select name="account_id" id="account_id" class="form-select" required>
+                    <select name="account_id" id="account_id" class="form-select">
+                        <option value="">未選択</option>
                         @foreach($accounts as $account)
                         <option value="{{ $account->id }}" {{ old('account_id') == $account->id ? 'selected' : '' }}>
                             {{ $account->name }}
@@ -68,5 +69,32 @@
             </form>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const typeSelect = document.getElementById('type');
+            const accountSelect = document.getElementById('account_id');
+
+            function updateAccountRequired() {
+                if (typeSelect.value === 'income') {
+                    accountSelect.removeAttribute('required');
+                    accountSelect.value = '';
+                } else {
+                    accountSelect.setAttribute('required', 'required');
+                }
+            }
+
+            // 初期状態を設定
+            updateAccountRequired();
+
+            // 種別変更時に支払手段を更新
+            typeSelect.addEventListener('change', function() {
+                if (typeSelect.value === 'income') {
+                    accountSelect.value = '';
+                }
+                updateAccountRequired();
+            });
+        });
+    </script>
 </x-app-layout>
 
