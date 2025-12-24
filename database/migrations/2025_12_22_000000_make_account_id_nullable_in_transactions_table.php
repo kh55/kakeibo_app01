@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -17,7 +17,7 @@ return new class extends Migration
         if (DB::getDriverName() === 'sqlite') {
             // SQLiteでは外部キー制約を削除
             DB::statement('PRAGMA foreign_keys=off;');
-            
+
             // 一時テーブルを作成
             DB::statement('CREATE TABLE transactions_new (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,20 +38,20 @@ return new class extends Migration
                 FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE RESTRICT,
                 FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
             );');
-            
+
             // データをコピー
             DB::statement('INSERT INTO transactions_new SELECT * FROM transactions;');
-            
+
             // 古いテーブルを削除
             DB::statement('DROP TABLE transactions;');
-            
+
             // 新しいテーブルをリネーム
             DB::statement('ALTER TABLE transactions_new RENAME TO transactions;');
-            
+
             // インデックスを再作成
             DB::statement('CREATE INDEX transactions_user_id_date_index ON transactions(user_id, date);');
             DB::statement('CREATE INDEX transactions_user_id_type_date_index ON transactions(user_id, type, date);');
-            
+
             DB::statement('PRAGMA foreign_keys=on;');
         } else {
             Schema::table('transactions', function (Blueprint $table) {
@@ -68,7 +68,7 @@ return new class extends Migration
         if (DB::getDriverName() === 'sqlite') {
             // SQLiteでは外部キー制約を削除
             DB::statement('PRAGMA foreign_keys=off;');
-            
+
             // 一時テーブルを作成（account_idをNOT NULLに）
             DB::statement('CREATE TABLE transactions_new (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -89,20 +89,20 @@ return new class extends Migration
                 FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE RESTRICT,
                 FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
             );');
-            
+
             // account_idがNULLのレコードを除外してデータをコピー
             DB::statement('INSERT INTO transactions_new SELECT * FROM transactions WHERE account_id IS NOT NULL;');
-            
+
             // 古いテーブルを削除
             DB::statement('DROP TABLE transactions;');
-            
+
             // 新しいテーブルをリネーム
             DB::statement('ALTER TABLE transactions_new RENAME TO transactions;');
-            
+
             // インデックスを再作成
             DB::statement('CREATE INDEX transactions_user_id_date_index ON transactions(user_id, date);');
             DB::statement('CREATE INDEX transactions_user_id_type_date_index ON transactions(user_id, type, date);');
-            
+
             DB::statement('PRAGMA foreign_keys=on;');
         } else {
             Schema::table('transactions', function (Blueprint $table) {
@@ -111,4 +111,3 @@ return new class extends Migration
         }
     }
 };
-
