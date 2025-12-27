@@ -3,8 +3,9 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
+// セキュリティ対策: トップページへのアクセスを404に設定
 Route::get('/', function () {
-    return view('welcome');
+    abort(404);
 });
 
 Route::get('/dashboard', function () {
