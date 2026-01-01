@@ -27,7 +27,7 @@ class Category extends Model
     public function resolveRouteBinding($value, $field = null)
     {
         $user = Auth::user();
-        if (!$user) {
+        if (! $user) {
             return null;
         }
 
