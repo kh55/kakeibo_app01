@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Auth;
 
 class Category extends Model
 {
@@ -19,6 +20,21 @@ class Category extends Model
     protected $casts = [
         'sort_order' => 'integer',
     ];
+
+    /**
+     * Retrieve the model for bound value.
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return null;
+        }
+
+        return $this->where('id', $value)
+            ->where('user_id', $user->id)
+            ->first();
+    }
 
     /**
      * Get the user that owns the category.
