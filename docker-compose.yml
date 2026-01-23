@@ -9,6 +9,9 @@ services:
     volumes:
       - ./:/var/www/html
       - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    environment:
+      - HOME=/var/www/html
+      - XDG_CONFIG_HOME=/var/www/html/storage
     networks:
       - kakeibo-network
     depends_on:

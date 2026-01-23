@@ -24,6 +24,10 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Copy existing application directory permissions
 RUN chown -R www-data:www-data /var/www/html
 
+# Create psysh config directory with proper permissions
+RUN mkdir -p /var/www/html/storage/.psysh && \
+    chown -R www-data:www-data /var/www/html/storage/.psysh
+
 # Change current user to www-data
 USER www-data
 
