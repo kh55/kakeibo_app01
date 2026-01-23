@@ -29,7 +29,7 @@
                 <tbody>
                     @foreach($rules as $rule)
                     <tr>
-                        <td>{{ $rule->account->name }}</td>
+                        <td>{{ $rule->account?->name ?? '不明' }}</td>
                         <td>{{ $rule->day_of_month }}日</td>
                         <td>{{ $rule->name }}</td>
                         <td class="text-end">{{ number_format($rule->amount) }}円</td>

@@ -75,20 +75,44 @@
         document.addEventListener('DOMContentLoaded', function() {
             const typeSelect = document.getElementById('type');
             const accountSelect = document.getElementById('account_id');
+            
+            // アカウント選択肢を保存（支出時に復元するため）
+            const accountOptions = Array.from(accountSelect.querySelectorAll('option[value!=""]')).map(option => ({
+                value: option.value,
+                text: option.textContent,
+                selected: option.selected
+            }));
+            
+            // 現在選択されている値を保存
+            const currentValue = accountSelect.value;
 
-            function updateAccountRequired() {
+            function updateAccountField() {
                 if (typeSelect.value === 'income') {
+                    // 収入の場合：未選択のみを表示し、disabledにする
+                    accountSelect.innerHTML = '<option value="">未選択</option>';
+                    accountSelect.value = '';
+                    accountSelect.disabled = true;
                     accountSelect.removeAttribute('required');
-                    if (accountSelect.value === '') {
-                        // 既に未選択の場合はそのまま
-                    } else if (!accountSelect.querySelector('option[value=""]')) {
-                        // 未選択オプションがない場合は追加（念のため）
-                    }
                 } else {
+                    // 支出の場合：アカウント選択肢を復元し、enabledにする
+                    accountSelect.innerHTML = '<option value="">未選択</option>';
+                    accountOptions.forEach(account => {
+                        const option = document.createElement('option');
+                        option.value = account.value;
+                        option.textContent = account.text;
+                        if (account.selected) {
+                            option.selected = true;
+                        }
+                        accountSelect.appendChild(option);
+                    });
+                    accountSelect.disabled = false;
                     accountSelect.setAttribute('required', 'required');
-                    // 支出の場合、未選択の場合は最初のアカウントを選択
-                    if (accountSelect.value === '') {
-                        const firstAccount = accountSelect.querySelector('option:not([value=""])');
+                    
+                    // 既存の値がある場合はそれを選択、なければ最初のアカウントを選択
+                    if (currentValue && accountSelect.querySelector(`option[value="${currentValue}"]`)) {
+                        accountSelect.value = currentValue;
+                    } else if (accountSelect.value === '') {
+                        const firstAccount = accountSelect.querySelector('option[value!=""]');
                         if (firstAccount) {
                             accountSelect.value = firstAccount.value;
                         }
@@ -97,14 +121,11 @@
             }
 
             // 初期状態を設定
-            updateAccountRequired();
+            updateAccountField();
 
             // 種別変更時に支払手段を更新
             typeSelect.addEventListener('change', function() {
-                if (typeSelect.value === 'income') {
-                    accountSelect.value = '';
-                }
-                updateAccountRequired();
+                updateAccountField();
             });
         });
     </script>
