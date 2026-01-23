@@ -63,6 +63,14 @@ class TransactionController extends Controller
             'tags' => 'nullable|string',
         ]);
 
+        // 空文字列をnullに変換
+        if (isset($validated['account_id']) && $validated['account_id'] === '') {
+            $validated['account_id'] = null;
+        }
+        if (isset($validated['category_id']) && $validated['category_id'] === '') {
+            $validated['category_id'] = null;
+        }
+
         $validated['user_id'] = Auth::id();
         Transaction::create($validated);
 
@@ -101,6 +109,14 @@ class TransactionController extends Controller
             'memo' => 'nullable|string',
             'tags' => 'nullable|string',
         ]);
+
+        // 空文字列をnullに変換
+        if (isset($validated['account_id']) && $validated['account_id'] === '') {
+            $validated['account_id'] = null;
+        }
+        if (isset($validated['category_id']) && $validated['category_id'] === '') {
+            $validated['category_id'] = null;
+        }
 
         $transaction->update($validated);
 

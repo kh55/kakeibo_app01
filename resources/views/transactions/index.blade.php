@@ -51,7 +51,7 @@
                                     {{ $transaction->type === 'income' ? '収入' : '支出' }}
                                 </span>
                             </td>
-                            <td>{{ $transaction->account->name }}</td>
+                            <td>{{ $transaction->account?->name ?? '未選択' }}</td>
                             <td>{{ $transaction->category?->name ?? '未分類' }}</td>
                             <td>{{ $transaction->name }}</td>
                             <td class="text-end">{{ number_format($transaction->amount) }}円</td>
