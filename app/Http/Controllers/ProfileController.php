@@ -63,8 +63,13 @@ class ProfileController extends Controller
      */
     public function loginLogs(Request $request): View
     {
-        $loginLogs = $request->user()
-            ->loginLogs()
+        $user = $request->user();
+        
+        // ログイン成功時（user_idが設定されている）と失敗時（emailが一致する）のログを取得
+        $loginLogs = \App\Models\LoginLog::where(function ($query) use ($user) {
+            $query->where('user_id', $user->id)
+                  ->orWhere('email', $user->email);
+        })
             ->orderBy('login_at', 'desc')
             ->paginate(20);
 
