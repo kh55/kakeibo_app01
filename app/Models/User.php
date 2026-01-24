@@ -101,4 +101,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(CashflowEntry::class);
     }
+
+    /**
+     * Get the login logs for the user.
+     */
+    public function loginLogs()
+    {
+        return $this->hasMany(LoginLog::class);
+    }
 }
