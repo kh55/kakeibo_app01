@@ -57,4 +57,19 @@ class ProfileController extends Controller
 
         return Redirect::to('/');
     }
+
+    /**
+     * Display the user's login logs.
+     */
+    public function loginLogs(Request $request): View
+    {
+        $loginLogs = $request->user()
+            ->loginLogs()
+            ->orderBy('login_at', 'desc')
+            ->paginate(20);
+
+        return view('profile.login-logs', [
+            'loginLogs' => $loginLogs,
+        ]);
+    }
 }
