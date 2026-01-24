@@ -44,6 +44,7 @@
                     </a>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="{{ route('profile.edit') }}">プロフィール</a></li>
+                        <li><a class="dropdown-item" href="{{ route('profile.login-logs') }}">ログインログ</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <form method="POST" action="{{ route('logout') }}">
