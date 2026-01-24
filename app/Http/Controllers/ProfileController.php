@@ -64,11 +64,17 @@ class ProfileController extends Controller
     public function loginLogs(Request $request): View
     {
         $user = $request->user();
+        $currentIp = $request->ip();
 
-        // ログイン成功時（user_idが設定されている）と失敗時（emailが一致する）のログを取得
-        $loginLogs = \App\Models\LoginLog::where(function ($query) use ($user) {
+        // ログイン成功時（user_idが設定されている）と失敗時（emailが一致する、または同じIPアドレスからの失敗）のログを取得
+        $loginLogs = \App\Models\LoginLog::where(function ($query) use ($user, $currentIp) {
             $query->where('user_id', $user->id)
-                ->orWhere('email', $user->email);
+                ->orWhere('email', $user->email)
+                ->orWhere(function ($q) use ($currentIp) {
+                    // 同じIPアドレスからのログイン失敗も表示（セキュリティ監視のため）
+                    $q->where('status', 'failed')
+                        ->where('ip_address', $currentIp);
+                });
         })->orderBy('login_at', 'desc')
             ->paginate(20);
 
