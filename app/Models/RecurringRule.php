@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Auth;
 
 class RecurringRule extends Model
 {
@@ -22,6 +23,21 @@ class RecurringRule extends Model
         'amount' => 'decimal:2',
         'enabled' => 'boolean',
     ];
+
+    /**
+     * Retrieve the model for bound value.
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return null;
+        }
+
+        return $this->where('id', $value)
+            ->where('user_id', $user->id)
+            ->first();
+    }
 
     /**
      * Get the user that owns the recurring rule.
