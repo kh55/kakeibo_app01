@@ -88,6 +88,20 @@ docker compose run --rm app php artisan recurring:generate
 docker compose run --rm app php artisan test
 ```
 
+### プッシュ前チェック（CI と同じ検証）
+
+main へのプッシュで動く GitHub Actions では、PHPUnit と **Laravel Pint**（コードスタイル）が実行されます。デプロイ失敗を防ぐため、プッシュ前に同じチェックをローカルで実行することを推奨します。
+
+```bash
+# スタイルチェックのみ（CI と同じ。問題があれば失敗）
+docker compose run --rm app composer pint:test
+
+# スタイルを自動修正してからコミット
+docker compose run --rm app composer pint
+```
+
+PHP を直接使う場合: `composer pint:test` / `composer pint`
+
 ## デプロイ
 
 GitHub Actionsによる自動デプロイが設定されています。ゼロダウンタイムデプロイ方式を採用しており、リリース管理と自動ロールバック機能を備えています。
