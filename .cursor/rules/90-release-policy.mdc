@@ -1,0 +1,17 @@
+---
+description: リリース作業は Cursor Command ではなく script/make で行う方針
+alwaysApply: true
+---
+
+# Release Automation Policy
+
+- リリース作業は Cursor Command で実行しない。
+- 以下は make / shell script / gh コマンドで実装すること：
+
+  - Git tag 作成
+  - gh release create によるリリースノート生成
+  - Slack通知（Webhook）
+  - Googleカレンダー登録
+
+理由：
+Cursor Command は sandbox 制約があり外部API操作に不向きなため。
