@@ -195,3 +195,4 @@ php artisan key:generate
 # 生成されたキーを .env ファイルにコピー
 ```
 
+
