@@ -80,6 +80,14 @@ docker compose run --rm app npm [command]
 docker compose run --rm app php artisan recurring:generate
 ```
 
+### テスト
+
+テストは Docker 環境で実行します。詳細は [docs/test.md](docs/test.md) を参照してください。
+
+```bash
+docker compose run --rm app php artisan test
+```
+
 ## デプロイ
 
 GitHub Actionsによる自動デプロイが設定されています。ゼロダウンタイムデプロイ方式を採用しており、リリース管理と自動ロールバック機能を備えています。
