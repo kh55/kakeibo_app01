@@ -1,0 +1,16 @@
+---
+description: GitHub MCP 操作の安全ガード
+alwaysApply: true
+---
+
+# GitHub MCP Safety Rules
+
+- GitHubへの書き込み操作（PR作成、コメント返信、Resolve、Merge、Push 等）は
+  ユーザーの明確な承認（OK / Yes / はい）があるまで絶対に実行しない。
+
+- 書き込み操作の前に、以下を必ず提示すること：
+  - 対象Repo
+  - 対象PR番号
+  - 実行内容の要約
+
+- 機密情報やトークンをPR本文・コメントに含めない。

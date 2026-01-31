@@ -1,0 +1,31 @@
+---
+description: git diff から PR 本文を生成するルール
+alwaysApply: false
+---
+
+# PR Create From Diff
+
+## 差分の取得方法（固定）
+branch=$(git branch --show-current)
+git diff origin/main "$branch" --name-status
+git diff origin/main "$branch" --stat
+
+## PR本文テンプレ（必須）
+
+## 背景
+この変更が必要になった理由や課題
+
+## 概要
+このPRで実現すること
+
+## 実施内容
+- 変更点をファイル単位または機能単位で整理
+
+## 参考
+関連Issueやドキュメント
+
+## 手順
+1. 上記差分を取得
+2. テンプレに従って本文を生成
+3. ユーザーに提示
+4. OKが出たらGitHub MCPでPR作成
