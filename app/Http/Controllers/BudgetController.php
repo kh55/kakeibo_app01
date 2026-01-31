@@ -5,11 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Budget;
 use App\Models\Transaction;
 use Carbon\Carbon;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Database\QueryException;
 
 class BudgetController extends Controller
 {

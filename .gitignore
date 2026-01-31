@@ -19,7 +19,12 @@
 /storage/*.key
 /storage/pail
 /storage/.psysh
+/storage/composer
+/storage/psysh
 /vendor
+.cache
+.lesshst
+.local
 Homestead.json
 Homestead.yaml
 Thumbs.db
