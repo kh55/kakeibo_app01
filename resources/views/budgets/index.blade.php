@@ -29,6 +29,9 @@
                     <tr>
                         <th>分類</th>
                         <th class="text-end">予算額</th>
+                        <th class="text-end">実績額</th>
+                        <th class="text-end">残り</th>
+                        <th class="text-end">達成率</th>
                         <th>操作</th>
                     </tr>
                 </thead>
@@ -37,6 +40,20 @@
                     <tr>
                         <td>{{ $budget->category->name }}</td>
                         <td class="text-end">{{ number_format($budget->amount) }}円</td>
+                        <td class="text-end">{{ number_format($budget->actual_amount ?? 0) }}円</td>
+                        <td class="text-end">{{ number_format($budget->remaining ?? $budget->amount) }}円</td>
+                        <td class="text-end">
+                            @if($budget->is_over_budget ?? false)
+                                <span class="text-danger">超過</span>
+                            @else
+                                @php
+                                    $actual = (float) ($budget->actual_amount ?? 0);
+                                    $amount = (float) $budget->amount;
+                                    $rate = $amount > 0 ? round($actual / $amount * 100) : 0;
+                                @endphp
+                                {{ $rate }}%
+                            @endif
+                        </td>
                         <td>
                             <a href="{{ route('budgets.edit', $budget) }}" class="btn btn-sm btn-outline-primary">編集</a>
                             <form method="POST" action="{{ route('budgets.destroy', $budget) }}" class="d-inline">

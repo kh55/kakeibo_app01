@@ -1,0 +1,22 @@
+{
+  "feature_name": "budget-management",
+  "created_at": "2026-01-31T03:14:50Z",
+  "updated_at": "2026-01-31T03:29:28Z",
+  "language": "ja",
+  "phase": "tasks-generated",
+  "approvals": {
+    "requirements": {
+      "generated": true,
+      "approved": true
+    },
+    "design": {
+      "generated": true,
+      "approved": true
+    },
+    "tasks": {
+      "generated": true,
+      "approved": true
+    }
+  },
+  "ready_for_implementation": false
+}
