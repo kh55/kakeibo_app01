@@ -15,8 +15,10 @@ class TransactionController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $year = $request->get('year', Carbon::now()->year);
-        $month = $request->get('month', Carbon::now()->month);
+        $now = Carbon::now();
+        $year = (int) $request->get('year', $now->year) ?: $now->year;
+        $month = (int) $request->get('month', $now->month) ?: $now->month;
+        $month = $month < 1 || $month > 12 ? $now->month : $month;
         $type = $request->get('type'); // income or expense
 
         $query = Transaction::where('user_id', $user->id)
@@ -30,8 +32,9 @@ class TransactionController extends Controller
         }
 
         $transactions = $query->paginate(50);
+        $isLocal = app()->environment('local');
 
-        return view('transactions.index', compact('transactions', 'year', 'month', 'type'));
+        return view('transactions.index', compact('transactions', 'year', 'month', 'type', 'isLocal'));
     }
 
     /**
