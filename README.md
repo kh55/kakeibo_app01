@@ -1,28 +1,33 @@
 # 家計簿Webアプリ
 
-Laravel + MySQLで構築された家計簿管理Webアプリケーションです。
+Laravel で構築された家計簿管理Webアプリケーションです。認証は Laravel Breeze、ローカルでは SQLite / Docker・本番では MySQL を利用できます。
 
 ## 機能
 
-- 取引明細の管理（収入/支出）
+- **ダッシュボード**: 月次収支サマリ、分類別支出トップ10、予算 vs 実支出、今後の支払予定
+- **取引明細**: 収入/支出の登録・一覧・編集・削除（年月・種別フィルタ、ページネーション 50 件/ページ）
+- **マスタ**: 口座（支払手段）、分類（収入/支出）の CRUD
 - 予算管理
-- 定期支出の自動展開
+- 定期支出の自動展開（月初に `recurring:generate` で生成）
 - 分割払い管理
 - キャッシュフロー予定表
-- CSVインポート/エクスポート
+- CSV インポート/エクスポート
+- **プロフィール**: ログインログの表示
+
+ローカル環境（`APP_ENV=local`）では、任意でテストデータを投入でき、ダッシュボードに「ローカル環境」およびテストデータ登録年月を表示します。本番では実行・表示されません。
 
 ## 環境要件
 
-- PHP 8.2以上
-- MySQL 8.0以上
-- Composer
-- Node.js / npm（フロントエンドビルド用）
+- PHP 8.2 以上
+- Laravel 12.x
+- データベース: MySQL 8.0 以上（Docker/本番）、または SQLite（ローカル・.env の `DB_CONNECTION=sqlite`）
+- Composer、Node.js / npm（フロントエンドビルド用）
 
 ## セットアップ（Docker環境）
 
 ### 1. 環境変数の設定
 
-`.env.example`をコピーして`.env`を作成し、必要に応じて設定を変更してください。
+`.env.example` をコピーして `.env` を作成し、必要に応じて設定を変更してください。ローカルではデフォルトで `DB_CONNECTION=sqlite` になっており、Docker 内でも SQLite が使われます。Docker の MySQL を使う場合は `.env` で `DB_CONNECTION=mysql`、`DB_HOST=db`、`DB_DATABASE=kakeibo_db`、`DB_USERNAME=kakeibo_user`、`DB_PASSWORD=password` に変更してください。
 
 ```bash
 cp .env.example .env
@@ -55,15 +60,15 @@ docker compose run --rm app php artisan migrate
 
 ### 5.1 ローカル用テストデータ（任意）
 
-**本番環境では絶対に実行されません。** `APP_ENV=local` のときのみシードされます。
+**本番では実行されません。** `APP_ENV=local` のときのみシードされます。
 
-ページング確認用に、今月の取引を 65 件作成します（1 ページ 50 件のため 2 ページ目が表示されます）。テストユーザー `test@example.com` / `password` でログインして取引明細を確認できます。
+ページング確認用に今月の取引を 65 件作成します（1 ページ 50 件のため 2 ページ目が表示されます）。テストユーザー `test@example.com` / `password` でログインして取引明細・ダッシュボードを確認できます。
 
 ```bash
 docker compose run --rm app php artisan db:seed
 ```
 
-初回セットアップで `migrate` の直後に実行するか、テストデータだけ追加したい場合は上記のみ実行してください。
+初回セットアップで migrate の直後に実行するか、テストデータだけ追加したい場合に実行してください。
 
 ### 6. アセットのビルド
 
@@ -73,7 +78,7 @@ docker compose run --rm app npm run build
 
 ### 7. アクセス
 
-ブラウザで `http://localhost:8080` にアクセスしてください。
+ブラウザで `http://localhost:8080` にアクセスしてください。未登録の場合は `/register` でユーザー作成、既存ユーザーは `/login` でログインします。ログイン後はダッシュボードが表示されます。
 
 ## 開発
 
