@@ -53,6 +53,18 @@ docker compose run --rm app php artisan key:generate
 docker compose run --rm app php artisan migrate
 ```
 
+### 5.1 ローカル用テストデータ（任意）
+
+**本番環境では絶対に実行されません。** `APP_ENV=local` のときのみシードされます。
+
+ページング確認用に、今月の取引を 65 件作成します（1 ページ 50 件のため 2 ページ目が表示されます）。テストユーザー `test@example.com` / `password` でログインして取引明細を確認できます。
+
+```bash
+docker compose run --rm app php artisan db:seed
+```
+
+初回セットアップで `migrate` の直後に実行するか、テストデータだけ追加したい場合は上記のみ実行してください。
+
 ### 6. アセットのビルド
 
 ```bash

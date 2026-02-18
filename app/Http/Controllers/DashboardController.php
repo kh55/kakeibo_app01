@@ -29,7 +29,29 @@ class DashboardController extends Controller
         // Get upcoming payments
         $upcomingPayments = $this->getUpcomingPayments($user);
 
-        return view('dashboard.index', compact('summary', 'categoryExpenses', 'budgetComparison', 'upcomingPayments', 'year', 'month'));
+        $isLocal = app()->environment('local');
+        $localTestDataYearMonth = null;
+
+        if ($isLocal) {
+            $path = storage_path('app/local-test-data.json');
+            if (is_file($path)) {
+                $json = json_decode((string) file_get_contents($path), true);
+                if (is_array($json) && isset($json['yearMonth']) && is_string($json['yearMonth'])) {
+                    $localTestDataYearMonth = $json['yearMonth'];
+                }
+            }
+        }
+
+        return view('dashboard.index', compact(
+            'summary',
+            'categoryExpenses',
+            'budgetComparison',
+            'upcomingPayments',
+            'year',
+            'month',
+            'isLocal',
+            'localTestDataYearMonth',
+        ));
     }
 
     /**
