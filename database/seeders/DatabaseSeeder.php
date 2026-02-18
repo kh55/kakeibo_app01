@@ -15,11 +15,14 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        // ローカル専用テストデータ（ページング確認用 65 件など）。本番では絶対に実行されない。
+        if (app()->environment('local')) {
+            $this->call(LocalTestDataSeeder::class);
+        }
     }
 }

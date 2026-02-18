@@ -43,6 +43,18 @@
                         </tr>
                     </thead>
                     <tbody>
+                        @if($transactions->isEmpty())
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    表示する取引がありません。
+                                    @if($isLocal ?? false)
+                                        <br><small>テストデータは <strong>test@example.com</strong> / <strong>password</strong> でログインすると表示されます。年月は「{{ $year }}年{{ $month }}月」です。</small>
+                                    @else
+                                        <br><small>年月を変更してフィルタを試してください。</small>
+                                    @endif
+                                </td>
+                            </tr>
+                        @else
                         @foreach($transactions as $transaction)
                         <tr>
                             <td>{{ $transaction->date->format('Y-m-d') }}</td>
@@ -65,6 +77,7 @@
                             </td>
                         </tr>
                         @endforeach
+                        @endif
                     </tbody>
                 </table>
             </div>

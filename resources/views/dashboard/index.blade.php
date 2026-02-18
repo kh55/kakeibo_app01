@@ -3,6 +3,13 @@
         <h2 class="h4">ダッシュボード</h2>
     </x-slot>
 
+    @if(($isLocal ?? false) === true)
+        <div class="alert alert-warning mb-4">
+            <div><strong>ローカル環境</strong></div>
+            <div>テストデータ登録年月: <span class="fw-bold">{{ $localTestDataYearMonth ?? '未登録' }}</span></div>
+        </div>
+    @endif
+
     <div class="row mb-4">
         <div class="col-md-3">
             <div class="card">
