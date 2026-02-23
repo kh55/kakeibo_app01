@@ -30,10 +30,9 @@ class DashboardService
 
         $balance = $income - $expense;
 
-        // Calculate carryover balance
-        $previousMonth = Carbon::create($year, $month, 1)->subMonth();
-        $previousBalance = $this->getCarryoverBalance($user, $previousMonth->year, $previousMonth->month);
-        $carryoverBalance = $previousBalance + $balance;
+        // 繰越 = 当月末日時点の残高 = 当月月初残高 + 当月差額
+        $balanceAtStartOfMonth = $this->getCarryoverBalance($user, $year, $month);
+        $carryoverBalance = $balanceAtStartOfMonth + $balance;
 
         return [
             'year' => $year,
@@ -90,6 +89,26 @@ class DashboardService
                 ];
             })
             ->toArray();
+    }
+
+    /**
+     * Get monthly breakdown for a full year (income, expense, balance, carryover per month).
+     */
+    public function getAnnualSummary(User $user, int $year): array
+    {
+        $rows = [];
+        for ($month = 1; $month <= 12; $month++) {
+            $summary = $this->getMonthlySummary($user, $year, $month);
+            $rows[] = [
+                'month' => $month,
+                'income' => $summary['income'],
+                'expense' => $summary['expense'],
+                'balance' => $summary['balance'],
+                'carryover' => $summary['carryover_balance'],
+            ];
+        }
+
+        return $rows;
     }
 
     /**
