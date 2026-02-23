@@ -16,6 +16,7 @@ Route::middleware('auth')->group(function () {
 
     // ダッシュボード
     Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/annual-summary', [\App\Http\Controllers\DashboardController::class, 'annualSummary'])->name('annual-summary.index');
 
     // マスタ管理
     Route::resource('accounts', \App\Http\Controllers\AccountController::class);
