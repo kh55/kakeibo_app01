@@ -6,6 +6,7 @@ use App\Services\DashboardService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
@@ -52,6 +53,18 @@ class DashboardController extends Controller
             'isLocal',
             'localTestDataYearMonth',
         ));
+    }
+
+    /**
+     * Display annual summary (monthly income, expense, balance, carryover).
+     */
+    public function annualSummary(Request $request): View
+    {
+        $year = (int) $request->get('year', Carbon::now()->year);
+        $user = Auth::user();
+        $rows = $this->dashboardService->getAnnualSummary($user, $year);
+
+        return view('dashboard.annual', compact('year', 'rows'));
     }
 
     /**

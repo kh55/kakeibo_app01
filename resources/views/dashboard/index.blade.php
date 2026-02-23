@@ -1,6 +1,9 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="h4">ダッシュボード</h2>
+        <div class="d-flex justify-content-between align-items-center">
+            <h2 class="h4 mb-0">ダッシュボード</h2>
+            <a href="{{ route('annual-summary.index') }}" class="btn btn-outline-primary btn-sm">年間収支表</a>
+        </div>
     </x-slot>
 
     @if(($isLocal ?? false) === true)
