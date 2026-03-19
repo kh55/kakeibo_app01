@@ -36,7 +36,11 @@ class TransactionPerPageTest extends TestCase
     public function test_per_page_20_shows_correct_count(): void
     {
         $response = $this->actingAs($this->user)
-            ->get(route('transactions.index', ['per_page' => 20]));
+            ->get(route('transactions.index', [
+                'per_page' => 20,
+                'year' => now()->year,
+                'month' => now()->month,
+            ]));
 
         $response->assertOk();
         $response->assertViewHas('perPage', 20);
