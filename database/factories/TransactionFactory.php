@@ -12,6 +12,7 @@ class TransactionFactory extends Factory
     public function definition(): array
     {
         return [
+            'user_id' => \App\Models\User::factory(),
             'date' => fake()->dateTimeBetween('-1 year', 'now')->format('Y-m-d'),
             'type' => fake()->randomElement(['income', 'expense']),
             'account_id' => null,
