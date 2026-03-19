@@ -10,20 +10,27 @@
         <div class="card-body">
             <form method="GET" action="{{ route('transactions.index') }}" class="mb-3">
                 <div class="row g-3">
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <input type="number" name="year" value="{{ $year }}" class="form-control" placeholder="年">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <input type="number" name="month" value="{{ $month }}" class="form-control" placeholder="月" min="1" max="12">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <select name="type" class="form-select">
                             <option value="">すべて</option>
                             <option value="income" {{ $type === 'income' ? 'selected' : '' }}>収入</option>
                             <option value="expense" {{ $type === 'expense' ? 'selected' : '' }}>支出</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
+                        <select name="per_page" class="form-select">
+                            <option value="20" {{ $perPage === 20 ? 'selected' : '' }}>20件</option>
+                            <option value="50" {{ $perPage === 50 ? 'selected' : '' }}>50件</option>
+                            <option value="100" {{ $perPage === 100 ? 'selected' : '' }}>100件</option>
+                        </select>
+                    </div>
+                    <div class="col-md-auto">
                         <button type="submit" class="btn btn-secondary">フィルタ</button>
                     </div>
                 </div>
@@ -82,7 +89,7 @@
                 </table>
             </div>
 
-            {{ $transactions->links() }}
+            {{ $transactions->appends(request()->query())->links() }}
         </div>
     </div>
 </x-app-layout>
