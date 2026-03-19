@@ -23,7 +23,7 @@ class TransactionController extends Controller
 
         $allowedPerPage = [20, 50, 100];
         $perPage = (int) $request->get('per_page', 50);
-        if (!in_array($perPage, $allowedPerPage)) {
+        if (! in_array($perPage, $allowedPerPage)) {
             $perPage = 50;
         }
 
