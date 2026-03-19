@@ -21,6 +21,12 @@ class TransactionController extends Controller
         $month = $month < 1 || $month > 12 ? $now->month : $month;
         $type = $request->get('type'); // income or expense
 
+        $allowedPerPage = [20, 50, 100];
+        $perPage = (int) $request->get('per_page', 50);
+        if (!in_array($perPage, $allowedPerPage)) {
+            $perPage = 50;
+        }
+
         $query = Transaction::where('user_id', $user->id)
             ->forMonth($year, $month)
             ->with(['account', 'category'])
@@ -31,10 +37,10 @@ class TransactionController extends Controller
             $query->where('type', $type);
         }
 
-        $transactions = $query->paginate(50);
+        $transactions = $query->paginate($perPage);
         $isLocal = app()->environment('local');
 
-        return view('transactions.index', compact('transactions', 'year', 'month', 'type', 'isLocal'));
+        return view('transactions.index', compact('transactions', 'year', 'month', 'type', 'isLocal', 'perPage'));
     }
 
     /**
