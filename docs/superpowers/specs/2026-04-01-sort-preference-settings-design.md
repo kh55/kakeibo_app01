@@ -24,16 +24,19 @@
 |---|---|---|---|
 | `sort_preference` | `enum('manual', 'frequency')` | `'manual'` | 並び順の設定値 |
 
+既存行にはデフォルト値 `'manual'` が適用される。
+
 ### User モデル
 
 - `$fillable` に `sort_preference` を追加
-- `$casts` への追加は不要（文字列のまま使用）
 
 ---
 
 ## 2. 設定画面
 
 ### ルート
+
+`auth` ミドルウェアグループ内に追加する（既存の保護済みルートと同じグループ）。
 
 ```
 GET  /settings    SettingsController@edit    settings.edit
@@ -42,12 +45,13 @@ PUT  /settings    SettingsController@update  settings.update
 
 ### SettingsController
 
-- `edit`: ログインユーザーの `sort_preference` をビューに渡す
-- `update`: `sort_preference`（`manual` または `frequency`）をバリデーションして保存し、`settings.edit` にリダイレクト
+- `edit`: `Auth::user()` の `sort_preference` をビューに渡す
+- `update`: `sort_preference`（`manual` または `frequency`）をバリデーションして `Auth::user()` に保存し、`settings.edit` にリダイレクト。設定は認証済みユーザー自身にのみ保存する。
 
 ### ビュー: `resources/views/settings/edit.blade.php`
 
-ラジオボタン2択のシンプルなフォーム。
+- `@csrf` および `@method('PUT')` を必ず含める
+- ラジオボタン2択のフォーム:
 
 ```
 並び順設定
@@ -57,15 +61,15 @@ PUT  /settings    SettingsController@update  settings.update
 
 ### ナビゲーション
 
-既存のナビゲーションバー（プロフィールリンクの近く）に「設定」リンクを追加。
+既存のナビゲーションバーの**右側ユーザードロップダウン**（プロフィールリンクの近く）に「設定」リンクを追加する。
 
 ---
 
 ## 3. 並び順ロジック
 
-### TransactionController（`create` / `edit` アクション）
+### TransactionController（`create` / `edit` アクション両方）
 
-`$user->sort_preference` の値に応じてクエリを切り替える。
+`$user->sort_preference` の値に応じてクエリを切り替える。値が `null` の場合は `'manual'` として扱う。
 
 **`'manual'` の場合（既存と同じ）**
 ```php
@@ -77,19 +81,19 @@ $categories = $user->categories()->orderBy('sort_order')->get();
 ```php
 $accounts = $user->accounts()
     ->where('enabled', true)
-    ->withCount(['transactions' => fn($q) => $q->where('date', '>=', now()->subMonths(3))])
-    ->orderBy('transactions_count', 'desc')
+    ->withCount(['transactions as recent_count' => fn($q) => $q->where('date', '>=', now()->subMonths(3))])
+    ->orderBy('recent_count', 'desc')
     ->orderBy('sort_order')
     ->get();
 
 $categories = $user->categories()
-    ->withCount(['transactions' => fn($q) => $q->where('date', '>=', now()->subMonths(3))])
-    ->orderBy('transactions_count', 'desc')
+    ->withCount(['transactions as recent_count' => fn($q) => $q->where('date', '>=', now()->subMonths(3))])
+    ->orderBy('recent_count', 'desc')
     ->orderBy('sort_order')
     ->get();
 ```
 
-同頻度（0回含む）の場合は `sort_order` をタイブレーカーとして使用する。
+集計は**直近3ヶ月の `transactions.date`** で絞り込む（`withCount` のデフォルトは全件カウントのため、必ずクロージャで制約を付ける）。同頻度（0回含む）の場合は `sort_order` をタイブレーカーとして使用する。
 
 ---
 
@@ -97,15 +101,18 @@ $categories = $user->categories()
 
 ### SettingsController テスト
 
-- 設定画面（GET /settings）が正常に表示されること
+- 設定画面（GET /settings）が認証済みユーザーに正常表示されること
+- 未認証ユーザーはリダイレクトされること
 - `sort_preference` を `frequency` に更新できること
 - `sort_preference` を `manual` に戻せること
 - 無効な値（`invalid` など）はバリデーションエラーになること
+- 更新は認証済みユーザー自身に保存され、他ユーザーには影響しないこと
 
 ### TransactionController テスト
 
 - `sort_preference = 'manual'` のとき、`sort_order` 順で accounts/categories が返ること
-- `sort_preference = 'frequency'` のとき、直近3ヶ月の利用頻度が高い順で返ること
+- `sort_preference = 'frequency'` のとき、直近3ヶ月の利用頻度が高い順で返ること（頻度の高いものが先頭）
+- `sort_preference = 'frequency'` のとき、取引が1件もないユーザーでもエラーにならず、`sort_order` 順で返ること
 - 既存の `manual`（デフォルト）を前提としたテストは変更不要
 
 ---
@@ -117,8 +124,8 @@ $categories = $user->categories()
 | 新規マイグレーション | `sort_preference` カラム追加 |
 | `app/Models/User.php` | `$fillable` に追加 |
 | `app/Http/Controllers/SettingsController.php` | 新規作成 |
-| `resources/views/settings/edit.blade.php` | 新規作成 |
-| `routes/web.php` | `/settings` ルート追加 |
+| `resources/views/settings/edit.blade.php` | 新規作成（`@csrf`, `@method('PUT')` 含む） |
+| `routes/web.php` | `auth` ミドルウェアグループ内に `/settings` ルート追加 |
 | `app/Http/Controllers/TransactionController.php` | `create`/`edit` の並び順ロジック変更 |
-| ナビゲーションビュー | 「設定」リンク追加 |
+| ナビゲーションビュー | 右側ユーザードロップダウンに「設定」リンク追加 |
 | テストファイル | SettingsController テスト新規、TransactionController テスト追加 |
