@@ -15,5 +15,9 @@ class SettingsControllerTest extends TestCase
         $user = User::factory()->create();
 
         $this->assertEquals('manual', $user->sort_preference);
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'sort_preference' => 'manual',
+        ]);
     }
 }
