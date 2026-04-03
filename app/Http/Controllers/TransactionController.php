@@ -43,8 +43,23 @@ class TransactionController extends Controller
     public function create()
     {
         $user = Auth::user();
-        $accounts = $user->accounts()->where('enabled', true)->orderBy('sort_order')->get();
-        $categories = $user->categories()->orderBy('sort_order')->get();
+
+        if ($user->sort_preference === 'frequency') {
+            $accounts = $user->accounts()
+                ->where('enabled', true)
+                ->withCount(['transactions as recent_count' => fn ($q) => $q->where('date', '>=', now()->subMonths(3))])
+                ->orderBy('recent_count', 'desc')
+                ->orderBy('sort_order')
+                ->get();
+            $categories = $user->categories()
+                ->withCount(['transactions as recent_count' => fn ($q) => $q->where('date', '>=', now()->subMonths(3))])
+                ->orderBy('recent_count', 'desc')
+                ->orderBy('sort_order')
+                ->get();
+        } else {
+            $accounts = $user->accounts()->where('enabled', true)->orderBy('sort_order')->get();
+            $categories = $user->categories()->orderBy('sort_order')->get();
+        }
 
         return view('transactions.create', compact('accounts', 'categories'));
     }
@@ -88,8 +103,23 @@ class TransactionController extends Controller
     {
         $this->authorize('update', $transaction);
         $user = Auth::user();
-        $accounts = $user->accounts()->where('enabled', true)->orderBy('sort_order')->get();
-        $categories = $user->categories()->orderBy('sort_order')->get();
+
+        if ($user->sort_preference === 'frequency') {
+            $accounts = $user->accounts()
+                ->where('enabled', true)
+                ->withCount(['transactions as recent_count' => fn ($q) => $q->where('date', '>=', now()->subMonths(3))])
+                ->orderBy('recent_count', 'desc')
+                ->orderBy('sort_order')
+                ->get();
+            $categories = $user->categories()
+                ->withCount(['transactions as recent_count' => fn ($q) => $q->where('date', '>=', now()->subMonths(3))])
+                ->orderBy('recent_count', 'desc')
+                ->orderBy('sort_order')
+                ->get();
+        } else {
+            $accounts = $user->accounts()->where('enabled', true)->orderBy('sort_order')->get();
+            $categories = $user->categories()->orderBy('sort_order')->get();
+        }
 
         return view('transactions.edit', compact('transaction', 'accounts', 'categories'));
     }
