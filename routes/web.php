@@ -14,6 +14,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/profile/login-logs', [ProfileController::class, 'loginLogs'])->name('profile.login-logs');
 
+    // 設定
+    Route::get('/settings', [\App\Http\Controllers\SettingsController::class, 'edit'])->name('settings.edit');
+    Route::put('/settings', [\App\Http\Controllers\SettingsController::class, 'update'])->name('settings.update');
+
     // ダッシュボード
     Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
     Route::get('/annual-summary', [\App\Http\Controllers\DashboardController::class, 'annualSummary'])->name('annual-summary.index');
