@@ -49,8 +49,7 @@ class TransactionController extends Controller
     public function create()
     {
         $user = Auth::user();
-        $accounts = $user->accounts()->where('enabled', true)->orderBy('sort_order')->get();
-        $categories = $user->categories()->orderBy('sort_order')->get();
+        [$accounts, $categories] = $this->sortedAccountsAndCategories($user);
 
         return view('transactions.create', compact('accounts', 'categories'));
     }
@@ -94,8 +93,7 @@ class TransactionController extends Controller
     {
         $this->authorize('update', $transaction);
         $user = Auth::user();
-        $accounts = $user->accounts()->where('enabled', true)->orderBy('sort_order')->get();
-        $categories = $user->categories()->orderBy('sort_order')->get();
+        [$accounts, $categories] = $this->sortedAccountsAndCategories($user);
 
         return view('transactions.edit', compact('transaction', 'accounts', 'categories'));
     }
@@ -143,5 +141,37 @@ class TransactionController extends Controller
 
         return redirect()->route('transactions.index')
             ->with('success', '取引を削除しました。');
+    }
+
+    /**
+     * Get accounts and categories sorted by user's sort_preference.
+     *
+     * @return array{0: \Illuminate\Database\Eloquent\Collection, 1: \Illuminate\Database\Eloquent\Collection}
+     */
+    private function sortedAccountsAndCategories(\App\Models\User $user): array
+    {
+        if ($user->sort_preference === 'frequency') {
+            $cutoff = now()->subMonths(3);
+            $accounts = $user->accounts()
+                ->where('enabled', true)
+                ->withCount(['transactions as recent_count' => fn ($q) => $q
+                    ->where('user_id', $user->id)
+                    ->where('date', '>=', $cutoff)])
+                ->orderBy('recent_count', 'desc')
+                ->orderBy('sort_order')
+                ->get();
+            $categories = $user->categories()
+                ->withCount(['transactions as recent_count' => fn ($q) => $q
+                    ->where('user_id', $user->id)
+                    ->where('date', '>=', $cutoff)])
+                ->orderBy('recent_count', 'desc')
+                ->orderBy('sort_order')
+                ->get();
+        } else {
+            $accounts = $user->accounts()->where('enabled', true)->orderBy('sort_order')->get();
+            $categories = $user->categories()->orderBy('sort_order')->get();
+        }
+
+        return [$accounts, $categories];
     }
 }
