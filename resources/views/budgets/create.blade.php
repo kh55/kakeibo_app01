@@ -23,6 +23,9 @@
                 <div class="mb-3">
                     <label for="amount" class="form-label">予算額</label>
                     <input type="number" name="amount" id="amount" class="form-control" value="{{ old('amount') }}" min="0" step="0.01" required>
+                    @error('amount')
+                        <div class="text-danger small mt-1">{{ $message }}</div>
+                    @enderror
                 </div>
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary">登録</button>

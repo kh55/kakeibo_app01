@@ -64,7 +64,7 @@ class BudgetController extends Controller
         $validated = $request->validate([
             'category_id' => [
                 'required',
-                'exists:categories,id',
+                Rule::exists('categories', 'id')->where('user_id', Auth::id()),
                 Rule::unique('budgets', 'category_id')
                     ->where('user_id', Auth::id()),
             ],
@@ -113,7 +113,7 @@ class BudgetController extends Controller
         $validated = $request->validate([
             'category_id' => [
                 'required',
-                'exists:categories,id',
+                Rule::exists('categories', 'id')->where('user_id', Auth::id()),
                 Rule::unique('budgets', 'category_id')
                     ->where('user_id', Auth::id())
                     ->ignore($budget->id),
