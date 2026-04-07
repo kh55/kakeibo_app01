@@ -117,8 +117,6 @@ class DashboardService
     public function getBudgetComparison(User $user, int $year, int $month): array
     {
         $budgets = Budget::where('user_id', $user->id)
-            ->where('year', $year)
-            ->where('month', $month)
             ->with('category')
             ->get();
 
