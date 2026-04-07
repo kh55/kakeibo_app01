@@ -9,14 +9,6 @@
                 @csrf
                 @method('PUT')
                 <div class="mb-3">
-                    <label for="year" class="form-label">年</label>
-                    <input type="number" name="year" id="year" class="form-control" value="{{ old('year', $budget->year) }}" required>
-                </div>
-                <div class="mb-3">
-                    <label for="month" class="form-label">月</label>
-                    <input type="number" name="month" id="month" class="form-control" value="{{ old('month', $budget->month) }}" min="1" max="12" required>
-                </div>
-                <div class="mb-3">
                     <label for="category_id" class="form-label">分類</label>
                     <select name="category_id" id="category_id" class="form-select" required>
                         @foreach($categories as $category)
@@ -25,6 +17,9 @@
                         </option>
                         @endforeach
                     </select>
+                    @error('category_id')
+                        <div class="text-danger small mt-1">{{ $message }}</div>
+                    @enderror
                 </div>
                 <div class="mb-3">
                     <label for="amount" class="form-label">予算額</label>
@@ -38,4 +33,3 @@
         </div>
     </div>
 </x-app-layout>
-
