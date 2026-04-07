@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="d-flex justify-content-between align-items-center">
             <h2 class="h4 mb-0">予算管理</h2>
-            <a href="{{ route('budgets.create', ['year' => $year, 'month' => $month]) }}" class="btn btn-primary">新規登録</a>
+            <a href="{{ route('budgets.create') }}" class="btn btn-primary">新規登録</a>
         </div>
     </x-slot>
 
