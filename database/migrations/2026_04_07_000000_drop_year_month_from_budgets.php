@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('budgets', function (Blueprint $table) {
             $table->dropUnique(['user_id', 'year', 'month', 'category_id']);
-            $table->dropIndex(['user_id', 'year', 'month']);
+            $table->dropIndex('budgets_user_id_year_month_index');
             $table->dropColumn(['year', 'month']);
             $table->unique(['user_id', 'category_id']);
         });
@@ -23,7 +23,7 @@ return new class extends Migration
             $table->year('year')->after('user_id');
             $table->unsignedTinyInteger('month')->after('year');
             $table->unique(['user_id', 'year', 'month', 'category_id']);
-            $table->index(['user_id', 'year', 'month']);
+            $table->index(['user_id', 'year', 'month'], 'budgets_user_id_year_month_index');
         });
     }
 };
