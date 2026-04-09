@@ -121,4 +121,27 @@ class DashboardServiceTest extends TestCase
         $this->assertSame(2025, $trend[5]['year']);
         $this->assertSame(1, $trend[5]['month']);
     }
+
+    public function test_getMonthlyTrend_excludes_other_users_transactions(): void
+    {
+        $otherUser = User::factory()->create();
+
+        Transaction::factory()->create([
+            'user_id' => $this->user->id,
+            'type' => 'income',
+            'amount' => 200000,
+            'date' => '2025-04-15',
+        ]);
+        Transaction::factory()->create([
+            'user_id' => $otherUser->id,
+            'type' => 'income',
+            'amount' => 999999,
+            'date' => '2025-04-10',
+        ]);
+
+        $trend = $this->service->getMonthlyTrend($this->user, 2025, 4);
+
+        // 別ユーザーの income は含まれない
+        $this->assertSame(200000.0, $trend[5]['income']);
+    }
 }
