@@ -6,6 +6,16 @@
         </div>
     </x-slot>
 
+    <div class="d-flex justify-content-center align-items-center gap-3 mb-4">
+        <a href="{{ $prevUrl }}" class="btn btn-outline-secondary btn-sm">&#8592;</a>
+        <span class="fw-semibold fs-5">{{ $year }}年{{ $month }}月</span>
+        @if($nextUrl)
+            <a href="{{ $nextUrl }}" class="btn btn-outline-secondary btn-sm">&#8594;</a>
+        @else
+            <span class="btn btn-outline-secondary btn-sm disabled" aria-disabled="true">&#8594;</span>
+        @endif
+    </div>
+
     @if(($isLocal ?? false) === true)
         <div class="alert alert-warning mb-4">
             <div><strong>ローカル環境</strong></div>
