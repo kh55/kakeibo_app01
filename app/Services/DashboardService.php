@@ -34,6 +34,8 @@ class DashboardService
         $balanceAtStartOfMonth = $this->getCarryoverBalance($user, $year, $month);
         $carryoverBalance = $balanceAtStartOfMonth + $balance;
 
+        $savingsRate = $income > 0 ? (int) round(($income - $expense) / $income * 100) : null;
+
         return [
             'year' => $year,
             'month' => $month,
@@ -41,6 +43,7 @@ class DashboardService
             'expense' => $expense,
             'balance' => $balance,
             'carryover_balance' => $carryoverBalance,
+            'savings_rate' => $savingsRate,
         ];
     }
 
