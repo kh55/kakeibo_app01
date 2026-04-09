@@ -141,4 +141,40 @@ class DashboardService
             ];
         })->toArray();
     }
+
+    /**
+     * Get income/expense for the past N months ending at the given year/month.
+     *
+     * @return array<int, array{year: int, month: int, income: float, expense: float}>
+     */
+    public function getMonthlyTrend(User $user, int $year, int $month, int $months = 6): array
+    {
+        $result = [];
+        $base = Carbon::create($year, $month, 1);
+
+        for ($i = $months - 1; $i >= 0; $i--) {
+            $d = $base->copy()->subMonths($i);
+            $y = $d->year;
+            $m = $d->month;
+
+            $income = (float) Transaction::where('user_id', $user->id)
+                ->forMonth($y, $m)
+                ->income()
+                ->sum('amount');
+
+            $expense = (float) Transaction::where('user_id', $user->id)
+                ->forMonth($y, $m)
+                ->expense()
+                ->sum('amount');
+
+            $result[] = [
+                'year'    => $y,
+                'month'   => $m,
+                'income'  => $income,
+                'expense' => $expense,
+            ];
+        }
+
+        return $result;
+    }
 }
