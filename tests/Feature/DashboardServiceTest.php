@@ -13,12 +13,13 @@ class DashboardServiceTest extends TestCase
     use RefreshDatabase;
 
     private DashboardService $service;
+
     private User $user;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new DashboardService();
+        $this->service = new DashboardService;
         $this->user = User::factory()->create();
     }
 
