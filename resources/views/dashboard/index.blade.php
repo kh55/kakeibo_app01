@@ -6,6 +6,16 @@
         </div>
     </x-slot>
 
+    <div class="d-flex justify-content-center align-items-center gap-3 mb-4">
+        <a href="{{ $prevUrl }}" class="btn btn-outline-secondary btn-sm">&#8592;</a>
+        <span class="fw-semibold fs-5">{{ $year }}年{{ $month }}月</span>
+        @if($nextUrl)
+            <a href="{{ $nextUrl }}" class="btn btn-outline-secondary btn-sm">&#8594;</a>
+        @else
+            <span class="btn btn-outline-secondary btn-sm disabled" aria-disabled="true">&#8594;</span>
+        @endif
+    </div>
+
     @if(($isLocal ?? false) === true)
         <div class="alert alert-warning mb-4">
             <div><strong>ローカル環境</strong></div>
@@ -14,7 +24,7 @@
     @endif
 
     <div class="row mb-4">
-        <div class="col-md-3">
+        <div class="col">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">当月収入</h5>
@@ -22,7 +32,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">当月支出</h5>
@@ -30,7 +40,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">当月収支</h5>
@@ -39,7 +49,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">繰越残高</h5>
@@ -47,7 +57,67 @@
                 </div>
             </div>
         </div>
+        <div class="col">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <h5 class="card-title">貯蓄率</h5>
+                    @if($summary['savings_rate'] === null)
+                        <p class="card-text h3 text-muted">—</p>
+                    @else
+                        <p class="card-text h3 {{ $summary['savings_rate'] >= 0 ? 'text-primary' : 'text-danger' }}">
+                            {{ $summary['savings_rate'] }}%</p>
+                    @endif
+                </div>
+            </div>
+        </div>
     </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">月次推移（直近6ヶ月）</h5>
+        </div>
+        <div class="card-body">
+            <canvas id="monthlyTrendChart"
+                data-trend='@json($monthlyTrend)'></canvas>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const canvas = document.getElementById('monthlyTrendChart');
+        const trend = JSON.parse(canvas.dataset.trend);
+        const labels = trend.map(function (r) {
+            return r.year + '/' + r.month;
+        });
+        new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: '収入',
+                        data: trend.map(function (r) { return r.income; }),
+                        backgroundColor: '#0d6efd',
+                    },
+                    {
+                        label: '支出',
+                        data: trend.map(function (r) { return r.expense; }),
+                        backgroundColor: '#dc3545',
+                    },
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    });
+    </script>
 
     <div class="row">
         <div class="col-md-6">

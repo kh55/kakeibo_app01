@@ -30,6 +30,17 @@ class DashboardController extends Controller
         // Get upcoming payments
         $upcomingPayments = $this->getUpcomingPayments($user);
 
+        // 月次推移データ（直近6ヶ月）
+        $monthlyTrend = $this->dashboardService->getMonthlyTrend($user, $year, $month);
+
+        // 月切り替えナビゲーション URL
+        $prevDate = Carbon::create($year, $month, 1)->subMonth();
+        $nextDate = Carbon::create($year, $month, 1)->addMonth();
+        $nextUrl = $nextDate->lessThanOrEqualTo(Carbon::now()->startOfMonth())
+            ? route('dashboard', ['year' => $nextDate->year, 'month' => $nextDate->month])
+            : null;
+        $prevUrl = route('dashboard', ['year' => $prevDate->year, 'month' => $prevDate->month]);
+
         $isLocal = app()->environment('local');
         $localTestDataYearMonth = null;
 
@@ -52,6 +63,9 @@ class DashboardController extends Controller
             'month',
             'isLocal',
             'localTestDataYearMonth',
+            'monthlyTrend',
+            'prevUrl',
+            'nextUrl',
         ));
     }
 
