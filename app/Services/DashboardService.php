@@ -168,9 +168,9 @@ class DashboardService
                 ->sum('amount');
 
             $result[] = [
-                'year'    => $y,
-                'month'   => $m,
-                'income'  => $income,
+                'year' => $y,
+                'month' => $m,
+                'income' => $income,
                 'expense' => $expense,
             ];
         }
