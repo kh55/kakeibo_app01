@@ -24,7 +24,7 @@
     @endif
 
     <div class="row mb-4">
-        <div class="col-md-3">
+        <div class="col">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">当月収入</h5>
@@ -32,7 +32,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">当月支出</h5>
@@ -40,7 +40,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">当月収支</h5>
@@ -49,11 +49,24 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">繰越残高</h5>
                     <p class="card-text h3">{{ number_format($summary['carryover_balance']) }}円</p>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <h5 class="card-title">貯蓄率</h5>
+                    @if($summary['savings_rate'] === null)
+                        <p class="card-text h3 text-muted">—</p>
+                    @else
+                        <p class="card-text h3 {{ $summary['savings_rate'] >= 0 ? 'text-primary' : 'text-danger' }}">
+                            {{ $summary['savings_rate'] }}%</p>
+                    @endif
                 </div>
             </div>
         </div>
