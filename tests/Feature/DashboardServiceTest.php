@@ -23,7 +23,7 @@ class DashboardServiceTest extends TestCase
         $this->user = User::factory()->create();
     }
 
-    public function test_getMonthlySummary_returns_savings_rate_as_percentage(): void
+    public function test_get_monthly_summary_returns_savings_rate_as_percentage(): void
     {
         Transaction::factory()->create([
             'user_id' => $this->user->id,
@@ -43,14 +43,14 @@ class DashboardServiceTest extends TestCase
         $this->assertSame(25, $summary['savings_rate']);
     }
 
-    public function test_getMonthlySummary_returns_null_savings_rate_when_income_is_zero(): void
+    public function test_get_monthly_summary_returns_null_savings_rate_when_income_is_zero(): void
     {
         $summary = $this->service->getMonthlySummary($this->user, 2025, 4);
 
         $this->assertNull($summary['savings_rate']);
     }
 
-    public function test_getMonthlySummary_returns_negative_savings_rate_when_expense_exceeds_income(): void
+    public function test_get_monthly_summary_returns_negative_savings_rate_when_expense_exceeds_income(): void
     {
         Transaction::factory()->create([
             'user_id' => $this->user->id,
@@ -70,7 +70,7 @@ class DashboardServiceTest extends TestCase
         $this->assertSame(-20, $summary['savings_rate']);
     }
 
-    public function test_getMonthlyTrend_returns_six_months_of_income_and_expense(): void
+    public function test_get_monthly_trend_returns_six_months_of_income_and_expense(): void
     {
         // 2025年4月の収支
         Transaction::factory()->create([
@@ -111,7 +111,7 @@ class DashboardServiceTest extends TestCase
         $this->assertSame(180000.0, $trend[3]['income']);
     }
 
-    public function test_getMonthlyTrend_handles_year_boundary_correctly(): void
+    public function test_get_monthly_trend_handles_year_boundary_correctly(): void
     {
         // 年をまたぐケース: 2025年1月を基準に6ヶ月前 = 2024年8月
         $trend = $this->service->getMonthlyTrend($this->user, 2025, 1);
@@ -123,7 +123,7 @@ class DashboardServiceTest extends TestCase
         $this->assertSame(1, $trend[5]['month']);
     }
 
-    public function test_getMonthlyTrend_excludes_other_users_transactions(): void
+    public function test_get_monthly_trend_excludes_other_users_transactions(): void
     {
         $otherUser = User::factory()->create();
 
