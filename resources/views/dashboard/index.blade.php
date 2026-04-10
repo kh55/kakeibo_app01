@@ -87,7 +87,7 @@
         const canvas = document.getElementById('monthlyTrendChart');
         const trend = JSON.parse(canvas.dataset.trend);
         const labels = trend.map(function (r) {
-            return r.month + '月';
+            return r.year + '/' + r.month;
         });
         new Chart(canvas, {
             type: 'bar',
