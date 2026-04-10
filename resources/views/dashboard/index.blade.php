@@ -72,6 +72,53 @@
         </div>
     </div>
 
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">月次推移（直近6ヶ月）</h5>
+        </div>
+        <div class="card-body">
+            <canvas id="monthlyTrendChart"
+                data-trend='@json($monthlyTrend)'></canvas>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const canvas = document.getElementById('monthlyTrendChart');
+        const trend = JSON.parse(canvas.dataset.trend);
+        const labels = trend.map(function (r) {
+            return r.month + '月';
+        });
+        new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: '収入',
+                        data: trend.map(function (r) { return r.income; }),
+                        backgroundColor: '#0d6efd',
+                    },
+                    {
+                        label: '支出',
+                        data: trend.map(function (r) { return r.expense; }),
+                        backgroundColor: '#dc3545',
+                    },
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    });
+    </script>
+
     <div class="row">
         <div class="col-md-6">
             <div class="card">
