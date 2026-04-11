@@ -569,7 +569,7 @@ jobs:
           # Backup current deployment
           if [ -d "\$DEPLOY_PATH" ] && [ "\$(ls -A \$DEPLOY_PATH)" ]; then
             echo "💾 Creating backup: \$BACKUP_PATH"
-            cp -r "\$DEPLOY_PATH" "\$BACKUP_PATH"
+            cp -rP "\$DEPLOY_PATH" "\$BACKUP_PATH"
             echo "BACKUP_PATH=\$BACKUP_PATH" >> ~/.deploy_env
           fi
           
