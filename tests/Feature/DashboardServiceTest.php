@@ -145,4 +145,54 @@ class DashboardServiceTest extends TestCase
         // 別ユーザーの income は含まれない
         $this->assertSame(200000.0, $trend[5]['income']);
     }
+
+    public function test_get_category_expense_summary_returns_all_categories_when_no_limit(): void
+    {
+        // 11カテゴリを作成し、それぞれ支出を1件ずつ登録する
+        for ($i = 1; $i <= 11; $i++) {
+            $category = \App\Models\Category::create([
+                'user_id' => $this->user->id,
+                'name' => 'カテゴリ' . $i,
+                'type' => 'expense',
+                'color' => '#000000',
+                'sort_order' => $i,
+            ]);
+            Transaction::factory()->create([
+                'user_id' => $this->user->id,
+                'type' => 'expense',
+                'amount' => $i * 1000,
+                'category_id' => $category->id,
+                'date' => '2025-04-10',
+            ]);
+        }
+
+        $result = $this->service->getCategoryExpenseSummary($this->user, 2025, 4);
+
+        // limit なしなので 11件すべて返る
+        $this->assertCount(11, $result);
+    }
+
+    public function test_get_category_expense_summary_respects_explicit_limit(): void
+    {
+        for ($i = 1; $i <= 11; $i++) {
+            $category = \App\Models\Category::create([
+                'user_id' => $this->user->id,
+                'name' => 'カテゴリ' . $i,
+                'type' => 'expense',
+                'color' => '#000000',
+                'sort_order' => $i,
+            ]);
+            Transaction::factory()->create([
+                'user_id' => $this->user->id,
+                'type' => 'expense',
+                'amount' => $i * 1000,
+                'category_id' => $category->id,
+                'date' => '2025-04-10',
+            ]);
+        }
+
+        $result = $this->service->getCategoryExpenseSummary($this->user, 2025, 4, 5);
+
+        $this->assertCount(5, $result);
+    }
 }

@@ -74,17 +74,21 @@ class DashboardService
     /**
      * Get category-wise expense summary.
      */
-    public function getCategoryExpenseSummary(User $user, int $year, int $month, int $limit = 10): array
+    public function getCategoryExpenseSummary(User $user, int $year, int $month, ?int $limit = null): array
     {
-        return Transaction::where('user_id', $user->id)
+        $query = Transaction::where('user_id', $user->id)
             ->forMonth($year, $month)
             ->expense()
             ->select('category_id', DB::raw('SUM(amount) as total'))
             ->groupBy('category_id')
             ->with('category')
-            ->orderByDesc('total')
-            ->limit($limit)
-            ->get()
+            ->orderByDesc('total');
+
+        if ($limit !== null) {
+            $query->limit($limit);
+        }
+
+        return $query->get()
             ->map(function ($item) {
                 return [
                     'category_name' => $item->category?->name ?? '未分類',
