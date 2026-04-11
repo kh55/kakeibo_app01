@@ -177,7 +177,7 @@ class DashboardServiceTest extends TestCase
         for ($i = 1; $i <= 11; $i++) {
             $category = Category::create([
                 'user_id' => $this->user->id,
-                'name' => 'カテゴリ' . $i,
+                'name' => 'カテゴリ'.$i,
                 'type' => 'expense',
                 'color' => '#000000',
                 'sort_order' => $i,
