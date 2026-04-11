@@ -117,31 +117,61 @@
             }
         });
     });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const canvas = document.getElementById('categoryExpenseChart');
+        if (!canvas) { return; }
+        const expenses = JSON.parse(canvas.dataset.expenses);
+
+        const TOP_N = 7;
+        const top = expenses.slice(0, TOP_N);
+        const others = expenses.slice(TOP_N);
+        const othersTotal = others.reduce(function (sum, e) { return sum + parseFloat(e.total); }, 0);
+
+        const labels = top.map(function (e) { return e.category_name; });
+        const data = top.map(function (e) { return parseFloat(e.total); });
+
+        if (othersTotal > 0) {
+            labels.push('その他');
+            data.push(othersTotal);
+        }
+
+        new Chart(canvas, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    borderWidth: 1,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                const value = context.parsed;
+                                return context.label + ': ' + value.toLocaleString() + '円';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
     </script>
 
     <div class="row">
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">分類別支出トップ10</h5>
+                    <h5 class="card-title mb-0">分類別支出</h5>
                 </div>
                 <div class="card-body">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th>分類</th>
-                                <th class="text-end">金額</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($categoryExpenses as $expense)
-                            <tr>
-                                <td>{{ $expense['category_name'] }}</td>
-                                <td class="text-end">{{ number_format($expense['total']) }}円</td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                    <canvas id="categoryExpenseChart"
+                        data-expenses='@json($categoryExpenses)'></canvas>
                 </div>
             </div>
         </div>
