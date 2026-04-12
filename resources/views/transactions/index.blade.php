@@ -24,6 +24,17 @@
                         </select>
                     </div>
                     <div class="col-md-2">
+                        <select name="category_id" class="form-select">
+                            <option value="">分類：すべて</option>
+                            <option value="null" {{ $categoryId === 'null' ? 'selected' : '' }}>未分類</option>
+                            @foreach($categories as $category)
+                                <option value="{{ $category->id }}" {{ $categoryId == $category->id ? 'selected' : '' }}>
+                                    {{ $category->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2">
                         <select name="per_page" class="form-select">
                             <option value="20" {{ $perPage === 20 ? 'selected' : '' }}>20件</option>
                             <option value="50" {{ $perPage === 50 ? 'selected' : '' }}>50件</option>
