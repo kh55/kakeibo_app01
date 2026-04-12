@@ -12,9 +12,9 @@
           },
           {
             "type": "command",
-            "command": "cmd=$(jq -r '.tool_input.command // \"\"'); if echo \"$cmd\" | grep -q 'gh pr create'; then if ! docker compose exec -T app vendor/bin/pint --test 2>&1; then printf '{\"continue\":false,\"stopReason\":\"PR作成前チェック失敗: Pint が失敗しました。docker compose exec -T app vendor/bin/pint で自動修正してから再試行してください。\"}'; exit 1; fi; if ! docker compose exec -T app vendor/bin/phpunit 2>&1; then printf '{\"continue\":false,\"stopReason\":\"PR作成前チェック失敗: PHPUnit が失敗しました。テストを修正してから再試行してください。\"}'; exit 1; fi; fi",
-            "timeout": 120,
-            "statusMessage": "PR作成前チェック中 (Pint + PHPUnit)..."
+            "command": "cmd=$(jq -r '.tool_input.command // \"\"'); if echo \"$cmd\" | grep -q 'gh pr create'; then if ! docker compose exec -T app vendor/bin/pint --test 2>&1; then printf '{\"continue\":false,\"stopReason\":\"PR作成前チェック失敗: Pint が失敗しました。docker compose exec -T app vendor/bin/pint で自動修正してから再試行してください。\"}'; exit 1; fi; if ! docker compose exec -T app vendor/bin/phpunit 2>&1; then printf '{\"continue\":false,\"stopReason\":\"PR作成前チェック失敗: PHPUnit が失敗しました。テストを修正してから再試行してください。\"}'; exit 1; fi; if ! npx playwright test 2>&1; then printf '{\"continue\":false,\"stopReason\":\"PR作成前チェック失敗: Playwright E2Eテストが失敗しました。npx playwright test --headed で原因を確認してから再試行してください。\"}'; exit 1; fi; fi",
+            "timeout": 300,
+            "statusMessage": "PR作成前チェック中 (Pint + PHPUnit + Playwright)..."
           }
         ]
       }
