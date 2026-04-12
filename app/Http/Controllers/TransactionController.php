@@ -46,7 +46,7 @@ class TransactionController extends Controller
 
         $transactions = $query->paginate($perPage);
         $isLocal = app()->environment('local');
-        $categories = $user->categories()->get();
+        $categories = $user->categories()->orderBy('sort_order')->get();
 
         return view('transactions.index', compact('transactions', 'year', 'month', 'type', 'isLocal', 'perPage', 'categoryId', 'categories'));
     }
