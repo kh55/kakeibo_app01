@@ -20,6 +20,7 @@ class TransactionController extends Controller
         $month = (int) $request->get('month', $now->month) ?: $now->month;
         $month = $month < 1 || $month > 12 ? $now->month : $month;
         $type = $request->get('type'); // income or expense
+        $categoryId = $request->get('category_id');
 
         $allowedPerPage = [20, 50, 100];
         $perPage = (int) $request->get('per_page', 50);
@@ -37,10 +38,17 @@ class TransactionController extends Controller
             $query->where('type', $type);
         }
 
+        if ($categoryId === 'null') {
+            $query->whereNull('category_id');
+        } elseif ($categoryId) {
+            $query->where('category_id', $categoryId);
+        }
+
         $transactions = $query->paginate($perPage);
         $isLocal = app()->environment('local');
+        $categories = $user->categories()->orderBy('sort_order')->get();
 
-        return view('transactions.index', compact('transactions', 'year', 'month', 'type', 'isLocal', 'perPage'));
+        return view('transactions.index', compact('transactions', 'year', 'month', 'type', 'isLocal', 'perPage', 'categoryId', 'categories'));
     }
 
     /**
