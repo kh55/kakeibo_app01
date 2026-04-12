@@ -1,12 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { LoginPage } from '../pages/LoginPage';
-import { resetDatabase } from '../helpers/db';
 
 test.describe('取引明細 - 分類フィルタ', () => {
-  test.beforeAll(() => {
-    resetDatabase();
-  });
-
   test.beforeEach(async ({ page }) => {
     const loginPage = new LoginPage(page);
     await loginPage.goto();
