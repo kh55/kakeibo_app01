@@ -6,6 +6,12 @@
         "hooks": [
           {
             "type": "command",
+            "command": "cmd=$(jq -r '.tool_input.command // \"\"'); if echo \"$cmd\" | grep -q 'git commit'; then branch=$(git branch --show-current); if [ \"$branch\" = \"main\" ]; then printf '{\"continue\":false,\"stopReason\":\"main ブランチに直接コミットしようとしています。ブランチを切ってから作業してください: git checkout -b <branch-name>\"}'; exit 1; fi; fi",
+            "timeout": 10,
+            "statusMessage": "main ブランチへの直接コミットをチェック中..."
+          },
+          {
+            "type": "command",
             "command": "cmd=$(jq -r '.tool_input.command // \"\"'); if echo \"$cmd\" | grep -q 'gh pr create'; then if ! docker compose exec -T app vendor/bin/pint --test 2>&1; then printf '{\"continue\":false,\"stopReason\":\"PR作成前チェック失敗: Pint が失敗しました。docker compose exec -T app vendor/bin/pint で自動修正してから再試行してください。\"}'; exit 1; fi; if ! docker compose exec -T app vendor/bin/phpunit 2>&1; then printf '{\"continue\":false,\"stopReason\":\"PR作成前チェック失敗: PHPUnit が失敗しました。テストを修正してから再試行してください。\"}'; exit 1; fi; fi",
             "timeout": 120,
             "statusMessage": "PR作成前チェック中 (Pint + PHPUnit)..."
