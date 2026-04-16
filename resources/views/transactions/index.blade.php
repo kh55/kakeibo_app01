@@ -35,6 +35,17 @@
                         </select>
                     </div>
                     <div class="col-md-2">
+                        <select name="account_id" class="form-select">
+                            <option value="">支払手段：すべて</option>
+                            <option value="null" {{ $accountId === 'null' ? 'selected' : '' }}>未選択</option>
+                            @foreach($filterAccounts as $account)
+                                <option value="{{ $account->id }}" {{ $accountId == $account->id ? 'selected' : '' }}>
+                                    {{ $account->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-2">
                         <select name="per_page" class="form-select">
                             <option value="20" {{ $perPage === 20 ? 'selected' : '' }}>20件</option>
                             <option value="50" {{ $perPage === 50 ? 'selected' : '' }}>50件</option>
