@@ -115,6 +115,24 @@ class CashflowController extends Controller
     }
 
     /**
+     * Show the form for duplicating the specified resource.
+     */
+    public function duplicate(CashflowEntry $cashflowEntry)
+    {
+        $this->authorize('view', $cashflowEntry);
+
+        $prefill = [
+            'date' => $cashflowEntry->date->addMonth()->format('Y-m-d'),
+            'name' => $cashflowEntry->name,
+            'expense_amount' => $cashflowEntry->expense_amount,
+            'income_amount' => $cashflowEntry->income_amount,
+            'memo' => $cashflowEntry->memo,
+        ];
+
+        return view('cashflow.create', compact('prefill'));
+    }
+
+    /**
      * Sync from recurring rules and installment plans.
      */
     public function sync(Request $request)
