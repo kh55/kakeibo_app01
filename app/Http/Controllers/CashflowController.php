@@ -114,6 +114,21 @@ class CashflowController extends Controller
             ->with('success', '予定を削除しました。');
     }
 
+    public function duplicate(CashflowEntry $cashflowEntry)
+    {
+        $this->authorize('view', $cashflowEntry);
+
+        $prefill = [
+            'date' => Carbon::parse($cashflowEntry->date)->addMonth()->format('Y-m-d'),
+            'name' => $cashflowEntry->name,
+            'expense_amount' => $cashflowEntry->expense_amount,
+            'income_amount' => $cashflowEntry->income_amount,
+            'memo' => $cashflowEntry->memo,
+        ];
+
+        return view('cashflow.create', compact('prefill'));
+    }
+
     /**
      * Sync from recurring rules and installment plans.
      */

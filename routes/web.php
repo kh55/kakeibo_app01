@@ -41,6 +41,7 @@ Route::middleware('auth')->group(function () {
     Route::post('installment-plans/{installmentPlan}/record-payment', [\App\Http\Controllers\InstallmentPlanController::class, 'recordPayment'])->name('installment-plans.record-payment');
 
     // 予定表（キャッシュフロー）
+    Route::get('cashflow/{cashflowEntry}/duplicate', [\App\Http\Controllers\CashflowController::class, 'duplicate'])->name('cashflow.duplicate');
     Route::resource('cashflow', \App\Http\Controllers\CashflowController::class);
     Route::post('cashflow/sync', [\App\Http\Controllers\CashflowController::class, 'sync'])->name('cashflow.sync');
 
