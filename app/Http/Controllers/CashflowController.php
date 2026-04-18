@@ -114,6 +114,9 @@ class CashflowController extends Controller
             ->with('success', '予定を削除しました。');
     }
 
+    /**
+     * Show the form for duplicating the specified resource.
+     */
     public function duplicate(CashflowEntry $cashflowEntry)
     {
         $this->authorize('view', $cashflowEntry);
