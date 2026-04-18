@@ -55,7 +55,16 @@
                         <td class="text-end">{{ number_format($entry['balance']) }}円</td>
                         <td>
                             @if(isset($entries[$index]))
-                            <a href="{{ route('cashflow.edit', $entries[$index]) }}" class="btn btn-sm btn-outline-primary">編集</a>
+                            <div class="d-flex gap-1">
+                                <a href="{{ route('cashflow.edit', $entries[$index]) }}" class="btn btn-sm btn-outline-primary">編集</a>
+                                <a href="{{ route('cashflow.duplicate', $entries[$index]) }}" class="btn btn-sm btn-outline-secondary">複製</a>
+                                <form method="POST" action="{{ route('cashflow.destroy', $entries[$index]) }}"
+                                    onsubmit="return confirm('この予定を削除しますか？')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">削除</button>
+                                </form>
+                            </div>
                             @endif
                         </td>
                     </tr>
