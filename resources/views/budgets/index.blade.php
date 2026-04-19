@@ -22,6 +22,13 @@
         </div>
     </div>
 
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="fw-bold text-muted">予算合計</div>
+            <div class="fs-4">{{ number_format($budgets->sum('amount')) }}円</div>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-body">
             <table class="table table-striped">

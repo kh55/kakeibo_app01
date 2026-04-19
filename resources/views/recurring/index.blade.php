@@ -12,6 +12,13 @@
         </div>
     </x-slot>
 
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="fw-bold text-muted">合計金額</div>
+            <div class="fs-4">{{ number_format($rules->sum('amount')) }}円</div>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-body">
             <table class="table table-striped">
