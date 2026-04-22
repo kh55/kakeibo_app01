@@ -36,10 +36,14 @@
                         <td>
                             <a href="{{ route('installment-plans.edit', $plan) }}" class="btn btn-sm btn-outline-primary">編集</a>
                             @if($plan->remaining_times > 0)
+                            @if(in_array($plan->id, $recordedThisMonth))
+                                <button class="btn btn-sm btn-outline-secondary" disabled>今月記録済</button>
+                            @else
                             <form method="POST" action="{{ route('installment-plans.record-payment', $plan) }}" class="d-inline">
                                 @csrf
                                 <button type="submit" class="btn btn-sm btn-outline-success">支払記録</button>
                             </form>
+                            @endif
                             @endif
                             <form method="POST" action="{{ route('installment-plans.destroy', $plan) }}" class="d-inline">
                                 @csrf
