@@ -21,6 +21,7 @@ class Transaction extends Model
         'name',
         'amount',
         'is_recurring',
+        'installment_plan_id',
         'memo',
         'tags',
     ];
@@ -29,6 +30,7 @@ class Transaction extends Model
         'date' => 'date',
         'amount' => 'decimal:2',
         'is_recurring' => 'boolean',
+        'installment_plan_id' => 'integer',
     ];
 
     /**
