@@ -30,3 +30,20 @@ Homestead.yaml
 Thumbs.db
 /temp_backup
 .worktrees/
+
+# IDE / Editor
+/.cursor
+
+# Local Claude Code settings
+.claude/settings.local.json
+
+# Superpowers tool
+/.superpowers
+/docs/superpowers
+
+# Testing artifacts
+/playwright-report
+/test-results
+
+# Environment
+.env.testing
