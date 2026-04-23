@@ -43,7 +43,7 @@ Route::middleware('auth')->group(function () {
     // 予定表（キャッシュフロー）
     Route::get('cashflow/{cashflowEntry}/duplicate', [\App\Http\Controllers\CashflowController::class, 'duplicate'])->name('cashflow.duplicate');
     Route::post('cashflow/sync', [\App\Http\Controllers\CashflowController::class, 'sync'])->name('cashflow.sync');
-    Route::resource('cashflow', \App\Http\Controllers\CashflowController::class);
+    Route::resource('cashflow', \App\Http\Controllers\CashflowController::class)->parameters(['cashflow' => 'cashflowEntry']);
 
     // インポート/エクスポート
     Route::get('/import-export', [\App\Http\Controllers\ImportExportController::class, 'index'])->name('import-export.index');
