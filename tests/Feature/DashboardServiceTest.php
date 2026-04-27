@@ -168,6 +168,118 @@ class DashboardServiceTest extends TestCase
         $this->assertEquals(11000, $result[0]['total']);
     }
 
+    public function test_get_top_expense_items_by_count_ranks_by_registration_count(): void
+    {
+        foreach (range(1, 3) as $_) {
+            Transaction::factory()->create([
+                'user_id' => $this->user->id,
+                'type' => 'expense',
+                'name' => 'コンビニ',
+                'amount' => 500,
+                'date' => '2025-04-10',
+            ]);
+        }
+        Transaction::factory()->create([
+            'user_id' => $this->user->id,
+            'type' => 'expense',
+            'name' => 'スーパー',
+            'amount' => 50000,
+            'date' => '2025-04-15',
+        ]);
+
+        $result = $this->service->getTopExpenseItems($this->user, 2025, 4);
+
+        $this->assertSame('コンビニ', $result['by_count'][0]['name']);
+        $this->assertSame(3, $result['by_count'][0]['count']);
+        $this->assertSame(1500.0, $result['by_count'][0]['total']);
+    }
+
+    public function test_get_top_expense_items_by_amount_ranks_by_total_amount(): void
+    {
+        Transaction::factory()->create([
+            'user_id' => $this->user->id,
+            'type' => 'expense',
+            'name' => 'スーパー',
+            'amount' => 50000,
+            'date' => '2025-04-15',
+        ]);
+        foreach (range(1, 3) as $_) {
+            Transaction::factory()->create([
+                'user_id' => $this->user->id,
+                'type' => 'expense',
+                'name' => 'コンビニ',
+                'amount' => 500,
+                'date' => '2025-04-10',
+            ]);
+        }
+
+        $result = $this->service->getTopExpenseItems($this->user, 2025, 4);
+
+        $this->assertSame('スーパー', $result['by_amount'][0]['name']);
+        $this->assertSame(50000.0, $result['by_amount'][0]['total']);
+        $this->assertSame(1, $result['by_amount'][0]['count']);
+    }
+
+    public function test_get_top_expense_items_excludes_income_transactions(): void
+    {
+        Transaction::factory()->create([
+            'user_id' => $this->user->id,
+            'type' => 'income',
+            'name' => '給与',
+            'amount' => 300000,
+            'date' => '2025-04-25',
+        ]);
+
+        $result = $this->service->getTopExpenseItems($this->user, 2025, 4);
+
+        $this->assertEmpty($result['by_count']);
+        $this->assertEmpty($result['by_amount']);
+    }
+
+    public function test_get_top_expense_items_excludes_other_users_transactions(): void
+    {
+        $otherUser = User::factory()->create();
+        foreach (range(1, 5) as $i) {
+            Transaction::factory()->create([
+                'user_id' => $otherUser->id,
+                'type' => 'expense',
+                'name' => "他ユーザー項目{$i}",
+                'amount' => 10000,
+                'date' => '2025-04-10',
+            ]);
+        }
+        Transaction::factory()->create([
+            'user_id' => $this->user->id,
+            'type' => 'expense',
+            'name' => '自分の支出',
+            'amount' => 1000,
+            'date' => '2025-04-10',
+        ]);
+
+        $result = $this->service->getTopExpenseItems($this->user, 2025, 4);
+
+        $this->assertCount(1, $result['by_count']);
+        $this->assertSame('自分の支出', $result['by_count'][0]['name']);
+    }
+
+    public function test_get_top_expense_items_limits_results_to_five(): void
+    {
+        foreach (range(1, 8) as $i) {
+            Transaction::factory()->create([
+                'user_id' => $this->user->id,
+                'type' => 'expense',
+                'name' => "項目{$i}",
+                'amount' => $i * 1000,
+                'date' => '2025-04-10',
+            ]);
+        }
+
+        $result = $this->service->getTopExpenseItems($this->user, 2025, 4);
+
+        $this->assertCount(5, $result['by_count']);
+        $this->assertCount(5, $result['by_amount']);
+    }
+
     /**
      * 11カテゴリを作成し、それぞれ支出を1件ずつ登録するヘルパー。
      * amount は $i * 1000（$i=1〜11）。
