@@ -207,5 +207,74 @@
             </div>
         </div>
     </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">支出項目 登録回数トップ5</h5>
+                </div>
+                <div class="card-body p-0">
+                    @if(empty($topExpenseItems['by_count']))
+                        <p class="text-muted p-3 mb-0">データがありません</p>
+                    @else
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="ps-3">#</th>
+                                    <th>項目名</th>
+                                    <th class="text-end">回数</th>
+                                    <th class="text-end pe-3">合計金額</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($topExpenseItems['by_count'] as $i => $item)
+                                <tr>
+                                    <td class="ps-3 text-muted">{{ $i + 1 }}</td>
+                                    <td>{{ $item['name'] }}</td>
+                                    <td class="text-end">{{ $item['count'] }}回</td>
+                                    <td class="text-end pe-3">{{ number_format($item['total']) }}円</td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @endif
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">支出項目 合計金額トップ5</h5>
+                </div>
+                <div class="card-body p-0">
+                    @if(empty($topExpenseItems['by_amount']))
+                        <p class="text-muted p-3 mb-0">データがありません</p>
+                    @else
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="ps-3">#</th>
+                                    <th>項目名</th>
+                                    <th class="text-end">合計金額</th>
+                                    <th class="text-end pe-3">回数</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($topExpenseItems['by_amount'] as $i => $item)
+                                <tr>
+                                    <td class="ps-3 text-muted">{{ $i + 1 }}</td>
+                                    <td>{{ $item['name'] }}</td>
+                                    <td class="text-end">{{ number_format($item['total']) }}円</td>
+                                    <td class="text-end pe-3">{{ $item['count'] }}回</td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
 </x-app-layout>
 
