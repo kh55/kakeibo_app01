@@ -181,4 +181,47 @@ class DashboardService
 
         return $result;
     }
+
+    /**
+     * Get top 5 expense items by registration count and by total amount.
+     *
+     * @return array{by_count: array<int, array{name: string, count: int, total: float}>, by_amount: array<int, array{name: string, total: float, count: int}>}
+     */
+    public function getTopExpenseItems(User $user, int $year, int $month): array
+    {
+        $byCount = Transaction::where('user_id', $user->id)
+            ->forMonth($year, $month)
+            ->expense()
+            ->select('name', DB::raw('COUNT(*) as count'), DB::raw('SUM(amount) as total'))
+            ->groupBy('name')
+            ->orderByDesc('count')
+            ->limit(5)
+            ->get()
+            ->map(fn ($item) => [
+                'name' => $item->name,
+                'count' => (int) $item->count,
+                'total' => (float) $item->total,
+            ])
+            ->toArray();
+
+        $byAmount = Transaction::where('user_id', $user->id)
+            ->forMonth($year, $month)
+            ->expense()
+            ->select('name', DB::raw('SUM(amount) as total'), DB::raw('COUNT(*) as count'))
+            ->groupBy('name')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->get()
+            ->map(fn ($item) => [
+                'name' => $item->name,
+                'total' => (float) $item->total,
+                'count' => (int) $item->count,
+            ])
+            ->toArray();
+
+        return [
+            'by_count' => $byCount,
+            'by_amount' => $byAmount,
+        ];
+    }
 }

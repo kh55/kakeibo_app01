@@ -26,6 +26,7 @@ class DashboardController extends Controller
         $summary = $this->dashboardService->getMonthlySummary($user, $year, $month);
         $categoryExpenses = $this->dashboardService->getCategoryExpenseSummary($user, $year, $month);
         $budgetComparison = $this->dashboardService->getBudgetComparison($user, $year, $month);
+        $topExpenseItems = $this->dashboardService->getTopExpenseItems($user, $year, $month);
 
         // Get upcoming payments
         $upcomingPayments = $this->getUpcomingPayments($user);
@@ -58,6 +59,7 @@ class DashboardController extends Controller
             'summary',
             'categoryExpenses',
             'budgetComparison',
+            'topExpenseItems',
             'upcomingPayments',
             'year',
             'month',
