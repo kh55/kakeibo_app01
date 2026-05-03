@@ -12,9 +12,15 @@ class CashflowService
 {
     /**
      * Calculate cashflow balance for a date range.
+     * 期間開始日より前の予定の累計を初期残高として加算する（通算残高）。
      */
-    public function calculateBalance(User $user, Carbon $startDate, Carbon $endDate, float $initialBalance = 0): array
+    public function calculateBalance(User $user, Carbon $startDate, Carbon $endDate): array
     {
+        $initialBalance = (float) CashflowEntry::where('user_id', $user->id)
+            ->where('date', '<', $startDate)
+            ->selectRaw('COALESCE(SUM(income_amount - expense_amount), 0) as net')
+            ->value('net');
+
         $entries = CashflowEntry::where('user_id', $user->id)
             ->whereBetween('date', [$startDate, $endDate])
             ->orderBy('date')
