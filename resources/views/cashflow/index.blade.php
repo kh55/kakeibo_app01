@@ -34,7 +34,7 @@
 
     <div class="card">
         <div class="card-body">
-            <table class="table table-striped">
+            <table class="table table-striped align-middle">
                 <thead>
                     <tr>
                         <th>日付</th>
@@ -46,12 +46,17 @@
                     </tr>
                 </thead>
                 <tbody>
+                    @php($today = \Carbon\Carbon::today())
                     @foreach($balance as $index => $entry)
-                    <tr>
-                        <td>{{ is_object($entry['date']) ? $entry['date']->format('Y-m-d') : $entry['date'] }}</td>
+                    @php(
+                        $entryDate = is_object($entry['date']) ? $entry['date'] : \Carbon\Carbon::parse($entry['date'])
+                    )
+                    @php($isPast = $entryDate->lt($today))
+                    <tr @class(['text-muted opacity-50' => $isPast])>
+                        <td>{{ $entryDate->format('Y-m-d') }}</td>
                         <td>{{ $entry['name'] }}</td>
-                        <td class="text-end text-success">{{ $entry['income'] > 0 ? number_format($entry['income']) . '円' : '' }}</td>
-                        <td class="text-end text-danger">{{ $entry['expense'] > 0 ? number_format($entry['expense']) . '円' : '' }}</td>
+                        <td class="text-end {{ $isPast ? '' : 'text-success' }}">{{ $entry['income'] > 0 ? number_format($entry['income']) . '円' : '' }}</td>
+                        <td class="text-end {{ $isPast ? '' : 'text-danger' }}">{{ $entry['expense'] > 0 ? number_format($entry['expense']) . '円' : '' }}</td>
                         <td class="text-end">{{ number_format($entry['balance']) }}円</td>
                         <td>
                             @if(isset($entries[$index]))
