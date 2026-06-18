@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
+use App\Models\Transaction;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -101,5 +102,27 @@ class CategoryComparisonControllerTest extends TestCase
 
         $response->assertOk();
         $this->assertNull($response->viewData('selectedCategory'));
+    }
+
+    public function test_page_shows_period_totals_and_change_labels(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-06-18'));
+        $category = $this->expenseCategory('食費', 1);
+        Transaction::factory()->create([
+            'user_id' => $this->user->id,
+            'type' => 'expense',
+            'category_id' => $category->id,
+            'amount' => 1234,
+            'date' => '2026-06-10',
+        ]);
+
+        $response = $this->actingAs($this->user)->get(route('category-comparison.index'));
+
+        $response->assertOk();
+        // 合計サマリの増減ラベル（日毎・月毎の両方が DOM に存在）
+        $response->assertSee('前月比');
+        $response->assertSee('前年比');
+        // 当月合計 1,234円 が表示される
+        $response->assertSee('1,234円');
     }
 }

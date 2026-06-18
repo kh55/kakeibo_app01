@@ -52,6 +52,7 @@
                         </h5>
                     </div>
                     <div class="card-body">
+                        @include('category-comparison._summary', ['data' => $daily, 'changeLabel' => '前月比'])
                         <canvas id="dailyChart" data-daily='@json($daily)'></canvas>
                     </div>
                 </div>
@@ -65,6 +66,7 @@
                         </h5>
                     </div>
                     <div class="card-body">
+                        @include('category-comparison._summary', ['data' => $monthly, 'changeLabel' => '前年比'])
                         <canvas id="monthlyChart" data-monthly='@json($monthly)'></canvas>
                     </div>
                 </div>

@@ -262,4 +262,66 @@ class CategoryComparisonServiceTest extends TestCase
         // すべて除外されるので 4月 = index 3 は 0.0
         $this->assertSame(0.0, $result['current'][3]);
     }
+
+    public function test_daily_comparison_includes_period_totals(): void
+    {
+        // 基準月 2025-04 合計 = 1000+500+2000 = 3500、前月 2025-03 = 800
+        $this->expense('2025-04-10', 1000);
+        $this->expense('2025-04-10', 500);
+        $this->expense('2025-04-20', 2000);
+        $this->expense('2025-03-15', 800);
+
+        $result = $this->service->getDailyComparison(
+            $this->user,
+            $this->category->id,
+            Carbon::parse('2025-04-01'),
+        );
+
+        $this->assertSame(3500.0, $result['currentTotal']);
+        $this->assertSame(800.0, $result['previousTotal']);
+    }
+
+    public function test_daily_comparison_current_total_is_month_to_date(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-06-15'));
+
+        $this->expense('2026-06-10', 1000);
+        $this->expense('2026-06-20', 5000); // 今日(15)より後 → to-date 合計に含めない
+
+        $result = $this->service->getDailyComparison(
+            $this->user,
+            $this->category->id,
+            Carbon::parse('2026-06-01'),
+        );
+
+        // 今日までの合計 = 1000（6/20 の 5000 は未来日のため除外）
+        $this->assertSame(1000.0, $result['currentTotal']);
+    }
+
+    public function test_monthly_comparison_includes_period_totals(): void
+    {
+        // 基準年 2025 合計 = 1000+500+2000 = 3500、前年 2024 = 800
+        $this->expense('2025-04-10', 1000);
+        $this->expense('2025-04-20', 500);
+        $this->expense('2025-05-01', 2000);
+        $this->expense('2024-04-15', 800);
+
+        $result = $this->service->getMonthlyComparison($this->user, $this->category->id, 2025);
+
+        $this->assertSame(3500.0, $result['currentTotal']);
+        $this->assertSame(800.0, $result['previousTotal']);
+    }
+
+    public function test_monthly_comparison_current_total_is_year_to_date(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-06-15'));
+
+        $this->expense('2026-03-10', 1000);
+        $this->expense('2026-09-01', 5000); // 現在月(6)より後 → to-date 合計に含めない
+
+        $result = $this->service->getMonthlyComparison($this->user, $this->category->id, 2026);
+
+        // 今月までの合計 = 1000（9月の 5000 は未来月のため除外）
+        $this->assertSame(1000.0, $result['currentTotal']);
+    }
 }
