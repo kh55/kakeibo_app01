@@ -11,7 +11,7 @@ class CategoryComparisonService
     /**
      * 指定分類の日別支出を、基準月と前月で比較する。
      *
-     * @return array{labels: list<int>, current: list<float|null>, previous: list<float|null>, currentLabel: string, previousLabel: string}
+     * @return array{labels: list<int>, current: list<float|null>, previous: list<float|null>, currentTotal: float, previousTotal: float, currentLabel: string, previousLabel: string}
      */
     public function getDailyComparison(User $user, int $categoryId, Carbon $baseMonth): array
     {
@@ -50,6 +50,8 @@ class CategoryComparisonService
             'labels' => $labels,
             'current' => $current,
             'previous' => $previous,
+            'currentTotal' => (float) array_sum($current),
+            'previousTotal' => (float) array_sum($previous),
             'currentLabel' => $currentStart->format('Y-m'),
             'previousLabel' => $previousStart->format('Y-m'),
         ];
@@ -58,7 +60,7 @@ class CategoryComparisonService
     /**
      * 指定分類の月別支出を、基準年と前年で比較する。
      *
-     * @return array{labels: list<string>, current: list<float|null>, previous: list<float>, currentLabel: string, previousLabel: string}
+     * @return array{labels: list<string>, current: list<float|null>, previous: list<float>, currentTotal: float, previousTotal: float, currentLabel: string, previousLabel: string}
      */
     public function getMonthlyComparison(User $user, int $categoryId, int $baseYear): array
     {
@@ -88,6 +90,8 @@ class CategoryComparisonService
             'labels' => $labels,
             'current' => $current,
             'previous' => $previous,
+            'currentTotal' => (float) array_sum($current),
+            'previousTotal' => (float) array_sum($previous),
             'currentLabel' => (string) $baseYear,
             'previousLabel' => (string) ($baseYear - 1),
         ];
