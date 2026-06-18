@@ -27,6 +27,9 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{ route('annual-summary.index') }}">年間収支</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('category-comparison.index') }}">分類別比較</a>
+                </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                         マスタ
