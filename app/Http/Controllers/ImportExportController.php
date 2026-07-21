@@ -8,6 +8,7 @@ use App\Models\Transaction;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class ImportExportController extends Controller
 {
@@ -128,15 +129,22 @@ class ImportExportController extends Controller
             fputcsv($file, ['日付', '支払手段', '分類', '項目', '金額', '定期フラグ', 'メモ']);
 
             foreach ($transactions as $transaction) {
-                fputcsv($file, [
-                    $transaction->date->format('Y-m-d'),
-                    $transaction->account->name,
-                    $transaction->category?->name ?? '',
-                    $transaction->name,
-                    $transaction->amount,
-                    $transaction->is_recurring ? 'true' : 'false',
-                    $transaction->memo ?? '',
-                ]);
+                try {
+                    fputcsv($file, [
+                        $transaction->date?->format('Y-m-d') ?? '',
+                        $transaction->account?->name ?? '',
+                        $transaction->category?->name ?? '',
+                        $transaction->name,
+                        $transaction->amount,
+                        $transaction->is_recurring ? 'true' : 'false',
+                        $transaction->memo ?? '',
+                    ]);
+                } catch (\Throwable $e) {
+                    Log::warning('CSV export skipped transaction', [
+                        'transaction_id' => $transaction->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
             }
 
             fclose($file);
