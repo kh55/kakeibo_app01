@@ -8,6 +8,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 
@@ -98,7 +99,7 @@ class LocalTestDataSeeder extends Seeder
         }
     }
 
-    private function ensureAccounts(User $user): \Illuminate\Support\Collection
+    private function ensureAccounts(User $user): Collection
     {
         $names = ['現金', 'メインバンク', 'クレジットカード'];
         $types = ['cash', 'bank', 'card'];
@@ -121,7 +122,7 @@ class LocalTestDataSeeder extends Seeder
         return $accounts;
     }
 
-    private function ensureCategories(User $user): \Illuminate\Support\Collection
+    private function ensureCategories(User $user): Collection
     {
         $items = [
             ['name' => '食費', 'type' => 'expense', 'color' => '#ef4444'],

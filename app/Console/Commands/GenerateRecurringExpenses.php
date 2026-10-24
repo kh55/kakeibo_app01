@@ -2,6 +2,9 @@
 
 namespace App\Console\Commands;
 
+use App\Models\User;
+use App\Services\RecurringExpenseService;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 
 class GenerateRecurringExpenses extends Command
@@ -25,10 +28,10 @@ class GenerateRecurringExpenses extends Command
      */
     public function handle()
     {
-        $service = app(\App\Services\RecurringExpenseService::class);
-        $now = \Carbon\Carbon::now();
+        $service = app(RecurringExpenseService::class);
+        $now = Carbon::now();
 
-        $users = \App\Models\User::all();
+        $users = User::all();
         $totalGenerated = 0;
 
         foreach ($users as $user) {

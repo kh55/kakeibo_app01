@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\InstallmentPlan;
+use App\Models\RecurringRule;
 use App\Services\DashboardService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -92,14 +94,14 @@ class DashboardController extends Controller
         $endOfMonth = $now->copy()->endOfMonth();
 
         // Recurring rules for this month
-        $recurringRules = \App\Models\RecurringRule::where('user_id', $user->id)
+        $recurringRules = RecurringRule::where('user_id', $user->id)
             ->where('enabled', true)
             ->where('day_of_month', '>=', $now->day)
             ->where('day_of_month', '<=', $endOfMonth->day)
             ->get();
 
         // Installment plans
-        $installmentPlans = \App\Models\InstallmentPlan::where('user_id', $user->id)
+        $installmentPlans = InstallmentPlan::where('user_id', $user->id)
             ->where('enabled', true)
             ->where('remaining_times', '>', 0)
             ->get()
