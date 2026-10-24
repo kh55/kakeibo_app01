@@ -28,6 +28,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          check-latest: true
 
       - name: Install NPM dependencies
         run: npm ci
@@ -79,6 +80,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+          check-latest: true
 
       - name: Install Composer dependencies
         run: composer install --no-dev --optimize-autoloader --no-interaction
