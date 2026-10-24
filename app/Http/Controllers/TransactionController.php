@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Transaction;
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -162,9 +164,9 @@ class TransactionController extends Controller
     /**
      * Get accounts and categories sorted by user's sort_preference.
      *
-     * @return array{0: \Illuminate\Database\Eloquent\Collection, 1: \Illuminate\Database\Eloquent\Collection}
+     * @return array{0: Collection, 1: Collection}
      */
-    private function sortedAccountsAndCategories(\App\Models\User $user): array
+    private function sortedAccountsAndCategories(User $user): array
     {
         if ($user->sort_preference === 'frequency') {
             $cutoff = now()->subMonths(3);

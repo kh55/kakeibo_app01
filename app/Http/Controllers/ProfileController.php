@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\LoginLog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -67,7 +68,7 @@ class ProfileController extends Controller
         $currentIp = $request->ip();
 
         // ログイン成功時（user_idが設定されている）と失敗時（emailが一致する、または同じIPアドレスからの失敗）のログを取得
-        $loginLogs = \App\Models\LoginLog::where(function ($query) use ($user, $currentIp) {
+        $loginLogs = LoginLog::where(function ($query) use ($user, $currentIp) {
             $query->where('user_id', $user->id)
                 ->orWhere('email', $user->email)
                 ->orWhere(function ($q) use ($currentIp) {

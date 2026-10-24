@@ -16,7 +16,7 @@ return new class extends Migration
             Schema::table('budgets', function (Blueprint $table) {
                 $table->unique(['user_id', 'category_id']);
             });
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // 既に存在する場合は無視
         }
 
@@ -25,7 +25,7 @@ return new class extends Migration
             Schema::table('budgets', function (Blueprint $table) {
                 $table->dropUnique(['user_id', 'year', 'month', 'category_id']);
             });
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // 既に削除済みの場合は無視
         }
 
@@ -34,7 +34,7 @@ return new class extends Migration
             Schema::table('budgets', function (Blueprint $table) {
                 $table->dropIndex('budgets_user_id_year_month_index');
             });
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // 既に削除済みの場合は無視
         }
 

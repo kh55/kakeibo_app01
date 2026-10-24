@@ -1,6 +1,17 @@
 <?php
 
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\BudgetController;
+use App\Http\Controllers\CashflowController;
+use App\Http\Controllers\CategoryComparisonController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ImportExportController;
+use App\Http\Controllers\InstallmentPlanController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RecurringRuleController;
+use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
 // セキュリティ対策: トップページへのアクセスを404に設定
@@ -15,41 +26,41 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile/login-logs', [ProfileController::class, 'loginLogs'])->name('profile.login-logs');
 
     // 設定
-    Route::get('/settings', [\App\Http\Controllers\SettingsController::class, 'edit'])->name('settings.edit');
-    Route::put('/settings', [\App\Http\Controllers\SettingsController::class, 'update'])->name('settings.update');
+    Route::get('/settings', [SettingsController::class, 'edit'])->name('settings.edit');
+    Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');
 
     // ダッシュボード
-    Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/annual-summary', [\App\Http\Controllers\DashboardController::class, 'annualSummary'])->name('annual-summary.index');
-    Route::get('/category-comparison', [\App\Http\Controllers\CategoryComparisonController::class, 'index'])->name('category-comparison.index');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/annual-summary', [DashboardController::class, 'annualSummary'])->name('annual-summary.index');
+    Route::get('/category-comparison', [CategoryComparisonController::class, 'index'])->name('category-comparison.index');
 
     // マスタ管理
-    Route::resource('accounts', \App\Http\Controllers\AccountController::class);
-    Route::resource('categories', \App\Http\Controllers\CategoryController::class);
+    Route::resource('accounts', AccountController::class);
+    Route::resource('categories', CategoryController::class);
 
     // 取引明細
-    Route::resource('transactions', \App\Http\Controllers\TransactionController::class);
+    Route::resource('transactions', TransactionController::class);
 
     // 予算管理
-    Route::resource('budgets', \App\Http\Controllers\BudgetController::class);
+    Route::resource('budgets', BudgetController::class);
 
     // 定期支出
-    Route::resource('recurring-rules', \App\Http\Controllers\RecurringRuleController::class);
-    Route::post('recurring-rules/generate', [\App\Http\Controllers\RecurringRuleController::class, 'generate'])->name('recurring-rules.generate');
+    Route::resource('recurring-rules', RecurringRuleController::class);
+    Route::post('recurring-rules/generate', [RecurringRuleController::class, 'generate'])->name('recurring-rules.generate');
 
     // 分割払い
-    Route::resource('installment-plans', \App\Http\Controllers\InstallmentPlanController::class);
-    Route::post('installment-plans/{installmentPlan}/record-payment', [\App\Http\Controllers\InstallmentPlanController::class, 'recordPayment'])->name('installment-plans.record-payment');
+    Route::resource('installment-plans', InstallmentPlanController::class);
+    Route::post('installment-plans/{installmentPlan}/record-payment', [InstallmentPlanController::class, 'recordPayment'])->name('installment-plans.record-payment');
 
     // 予定表（キャッシュフロー）
-    Route::get('cashflow/{cashflowEntry}/duplicate', [\App\Http\Controllers\CashflowController::class, 'duplicate'])->name('cashflow.duplicate');
-    Route::post('cashflow/sync', [\App\Http\Controllers\CashflowController::class, 'sync'])->name('cashflow.sync');
-    Route::resource('cashflow', \App\Http\Controllers\CashflowController::class)->parameters(['cashflow' => 'cashflowEntry']);
+    Route::get('cashflow/{cashflowEntry}/duplicate', [CashflowController::class, 'duplicate'])->name('cashflow.duplicate');
+    Route::post('cashflow/sync', [CashflowController::class, 'sync'])->name('cashflow.sync');
+    Route::resource('cashflow', CashflowController::class)->parameters(['cashflow' => 'cashflowEntry']);
 
     // インポート/エクスポート
-    Route::get('/import-export', [\App\Http\Controllers\ImportExportController::class, 'index'])->name('import-export.index');
-    Route::post('/import', [\App\Http\Controllers\ImportExportController::class, 'import'])->name('import-export.import');
-    Route::get('/export', [\App\Http\Controllers\ImportExportController::class, 'export'])->name('import-export.export');
+    Route::get('/import-export', [ImportExportController::class, 'index'])->name('import-export.index');
+    Route::post('/import', [ImportExportController::class, 'import'])->name('import-export.import');
+    Route::get('/export', [ImportExportController::class, 'export'])->name('import-export.export');
 });
 
 require __DIR__.'/auth.php';
